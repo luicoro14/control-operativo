@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriz de Control Operativo - Gestión de Actividades</title>
+    <style>
+        :root {
+            --bg-principal: #0b0f19;
+            --bg-card: #151d30;
+            --bg-input: #1e293b;
+            --accent-blue: #00d2ff;
+            --accent-green: #00e676;
+            --accent-warning: #ffb300;
+            --accent-danger: #ff5252;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            margin: 0;
+            padding: 20px; 
+            background: var(--bg-principal); 
+            color: var(--text-main); 
+        }
+
+        /* Pantalla de Inicio / Autenticación */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-principal);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+        }
+
+        .login-box h3 {
+            color: var(--accent-blue);
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-box p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .login-box input {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .login-btn {
+            background: var(--accent-blue);
+            color: #000;
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .login-btn:hover { background: #00b8e6; }
+
+        .login-error {
+            color: var(--accent-danger);
+            font-size: 12px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* Contenedor Principal */
+        .container { 
+            max-width: 1150px; 
+            margin: 0 auto; 
+            background: var(--bg-card); 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            border: 1px solid var(--border-color);
+            display: none;
+        }
+        
+        h2 { 
+            color: var(--accent-blue); 
+            margin-top: 0; 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 12px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+
+        .user-tag {
+            font-size: 11px;
+            background: var(--bg-input);
+            color: var(--accent-blue);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-logout {
+            background: #1e293b;
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            padding: 5px 10px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .version-tag {
+            font-size: 11px;
+            background: var(--bg-input);
+            color: var(--accent-blue);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Dashboard KPIs */
+        .kpi-container { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .kpi-card { 
+            flex: 1; 
+            min-width: 160px;
+            background: var(--bg-principal); 
+            border-left: 4px solid var(--accent-blue); 
+            padding: 14px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color);
+        }
+        .kpi-card h4 { margin: 0 0 5px 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+        .kpi-card .number { font-size: 20px; font-weight: bold; color: var(--text-main); }
+
+        /* Gráficos / Barras de Progreso */
+        .charts-section {
+            background: #0f172a;
+            padding: 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .charts-section h4 {
+            margin: 0 0 15px 0;
+            font-size: 12px;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-row { margin-bottom: 12px; }
+        .chart-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: var(--text-main); }
+        .progress-bar-bg { background: var(--bg-input); height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid var(--border-color); }
+        .progress-bar-fill { height: 100%; width: 0%; transition: width 0.4s ease; }
+
+        /* Formulario y Filtro */
+        .form-grid { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .filter-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; }
+        
+        input, select { 
+            padding: 10px; 
+            background: var(--bg-input); 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            font-size: 13px; 
+            color: var(--text-main);
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { border-color: var(--accent-blue); }
+        
+        .filter-section { 
+            background: #0f172a; 
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            border: 1px solid var(--border-color);
+        }
+        .filter-section label { font-size: 11px; font-weight: bold; color: var(--accent-blue); display: block; margin-bottom: 6px; }
+
+        /* Botones */
+        .btn-bar { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
+        .btn-group-left { display: flex; gap: 10px; }
+        button { 
+            padding: 10px 15px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 13px;
+            transition: all 0.2s ease; 
+        }
+        .btn-agregar { background: var(--accent-blue); color: #000; width: 100%; }
+        .btn-agregar:hover { background: #00b8e6; }
+        .btn-actualizar { background: var(--accent-warning); color: #000; width: 100%; display: none; }
+        .btn-exportar { background: #1e293b; color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .btn-importar { background: #1e293b; color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .btn-limpiar { background: #1e293b; color: var(--accent-danger); border: 1px solid var(--accent-danger); }
+        
+        .btn-accion { padding: 4px 8px; font-size: 11px; margin-right: 4px; border-radius: 4px; }
+        .btn-editar { background: #334155; color: var(--accent-blue); }
+        .btn-eliminar { background: #334155; color: var(--accent-danger); }
+
+        /* Tabla */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border: 1px solid var(--border-color); text-align: left; font-size: 13px; }
+        th { background-color: var(--bg-principal); color: var(--accent-blue); font-size: 11px; text-transform: uppercase; }
+        tr:nth-child(even) { background-color: #111827; }
+
+        tr.alerta-vencido { background-color: rgba(255, 82, 82, 0.15) !important; }
+        tr.alerta-proximo { background-color: rgba(255, 179, 0, 0.12) !important; }
+
+        /* Badges */
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; text-align: center; display: inline-block; }
+        .badge-pendiente { background: rgba(255, 82, 82, 0.15); color: var(--accent-danger); border: 1px solid var(--accent-danger); }
+        .badge-proceso { background: rgba(255, 179, 0, 0.15); color: var(--accent-warning); border: 1px solid var(--accent-warning); }
+        .badge-completado { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        
+        .alerta-texto { font-size: 10px; font-weight: bold; margin-left: 5px; }
+        .alerta-texto.rojo { color: var(--accent-danger); }
+        .alerta-texto.amarillo { color: var(--accent-warning); }
+
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de Autenticación -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <h3>Acceso Restringido</h3>
+            <p>Ingresa tus credenciales para acceder al sistema</p>
+            <input type="text" id="userInput" placeholder="Usuario" autocomplete="off">
+            <input type="password" id="passInput" placeholder="Contraseña">
+            <button class="login-btn" onclick="autenticar()">Ingresar</button>
+            <div id="loginError" class="login-error">Usuario o contraseña incorrectos</div>
+        </div>
+    </div>
+
+    <!-- Aplicativo Completo -->
+    <div id="appContainer" class="container">
+        <h2>
+            <span>Matriz de Control Operativo <span class="version-tag">v3.0 KPI</span></span>
+            <div class="header-actions">
+                <span id="userTag" class="user-tag">Usuario: --</span>
+                <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </h2>
+
+        <!-- Dashboard KPIs -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <h4>Total Actividades</h4>
+                <div class="number" id="kpiTotal">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: var(--accent-warning);">
+                <h4>Pendientes / Proceso</h4>
+                <div class="number" id="kpiPendientes">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: var(--accent-danger);">
+                <h4>Tareas Vencidas</h4>
+                <div class="number" id="kpiVencidos">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: var(--accent-green);">
+                <h4>Completadas</h4>
+                <div class="number" id="kpiCompletados">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: var(--accent-blue);">
+                <h4>Cumplimiento Global</h4>
+                <div class="number" id="kpiPorcentaje">0%</div>
+            </div>
+        </div>
+
+        <!-- Sección de Gráficos e Indicadores Visuales -->
+        <div class="charts-section">
+            <h4>📊 Avance y Distribución Operativa</h4>
+            
+            <div class="chart-row">
+                <div class="chart-label">
+                    <span>Nivel de Cumplimiento General</span>
+                    <strong id="barTextCumplimiento">0%</strong>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="barFillCumplimiento" class="progress-bar-fill" style="background: var(--accent-green);"></div>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-label">
+                    <span>Carga de Trabajos Pendientes / En Proceso</span>
+                    <strong id="barTextPendientes">0%</strong>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="barFillPendientes" class="progress-bar-fill" style="background: var(--accent-warning);"></div>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-label">
+                    <span>Índice de Incumplimiento (Tareas Vencidas)</span>
+                    <strong id="barTextVencidos">0%</strong>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="barFillVencidos" class="progress-bar-fill" style="background: var(--accent-danger);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="form-grid">
+            <input type="text" id="desc" placeholder="Descripción de la actividad">
+            <select id="categoria">
+                <option value="Servicios bancarios">Servicios bancarios</option>
+                <option value="Recaudación especializada">Recaudación especializada</option>
+                <option value="Control contable">Control contable</option>
+            </select>
+            <input type="text" id="responsable" placeholder="Responsable asignado">
+            <input type="date" id="fechaLimite" title="Fecha Límite">
+            <select id="estado">
+                <option value="Pendiente">Pendiente</option>
+                <option value="En Proceso">En Proceso</option>
+                <option value="Completado">Completado</option>
+            </select>
+        </div>
+        
+        <button id="btnGuardar" class="btn-agregar" onclick="agregarRegistro()" style="margin-bottom: 20px;">+ Guardar Actividad</button>
+        <button id="btnActualizar" class="btn-actualizar" onclick="guardarEdicion()" style="margin-bottom: 20px;">✏ Guardar Cambios</button>
+
+        <!-- Filtros -->
+        <div class="filter-section">
+            <label>🔍 FILTRAR ACTIVIDADES EN TIEMPO REAL</label>
+            <div class="filter-grid">
+                <input type="text" id="buscarTexto" placeholder="Buscar por palabra clave..." oninput="actualizarVista()">
+                <input type="text" id="filtroResponsable" placeholder="Filtrar por Responsable..." oninput="actualizarVista()">
+                <select id="filtroArea" onchange="actualizarVista()">
+                    <option value="TODAS">Todas las Áreas</option>
+                    <option value="Servicios bancarios">Servicios bancarios</option>
+                    <option value="Recaudación especializada">Recaudación especializada</option>
+                    <option value="Control contable">Control contable</option>
+                </select>
+                <select id="filtroEstado" onchange="actualizarVista()">
+                    <option value="TODOS">Todos los Estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En Proceso">En Proceso</option>
+                    <option value="Completado">Completado</option>
+                </select>
+            </div>
+            <button style="margin-top: 10px; background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); width: 100%;" onclick="limpiarFiltros()">Limpiar Todos los Filtros</button>
+        </div>
+
+        <!-- Barra Global -->
+        <div class="btn-bar">
+            <div class="btn-group-left">
+                <button class="btn-exportar" onclick="exportarExcel()">📥 Exportar CSV</button>
+                <button class="btn-importar" onclick="document.getElementById('fileInput').click()">📤 Cargar CSV</button>
+                <input type="file" id="fileInput" accept=".csv" onchange="importarCSV(event)">
+            </div>
+            <button class="btn-limpiar" onclick="limpiarTodo()">⚠ Borrar Todo</button>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha Límite</th>
+                        <th>Descripción</th>
+                        <th>Área</th>
+                        <th>Responsable</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const usuariosAutorizados = {
+            "admin": "1234",
+            "luis": "control2026",
+            "equipo": "operaciones"
+        };
+
+        let registros = JSON.parse(localStorage.getItem("mis_registros_operativos_v3")) || [];
+        let indiceEditando = null;
+
+        window.onload = function() {
+            let usuarioSesion = sessionStorage.getItem("usuario_autenticado");
+            if (usuarioSesion) {
+                mostrarAplicacion(usuarioSesion);
+            }
+        };
+
+        function autenticar() {
+            let user = document.getElementById("userInput").value.trim().toLowerCase();
+            let pass = document.getElementById("passInput").value.trim();
+            let errorDiv = document.getElementById("loginError");
+
+            if (usuariosAutorizados[user] && usuariosAutorizados[user] === pass) {
+                sessionStorage.setItem("usuario_autenticado", user);
+                errorDiv.style.display = "none";
+                mostrarAplicacion(user);
+            } else {
+                errorDiv.style.display = "block";
+            }
+        }
+
+        function mostrarAplicacion(usuario) {
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("appContainer").style.display = "block";
+            document.getElementById("userTag").textContent = `Usuario: ${usuario}`;
+            actualizarVista();
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem("usuario_autenticado");
+            document.getElementById("userInput").value = "";
+            document.getElementById("passInput").value = "";
+            document.getElementById("appContainer").style.display = "none";
+            document.getElementById("loginOverlay").style.display = "flex";
+        }
+
+        function obtenerDiferenciaDias(fechaLimiteStr) {
+            if (!fechaLimiteStr) return null;
+            let hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            let partes = fechaLimiteStr.split("-");
+            let limite = new Date(partes[0], partes[1] - 1, partes[2]);
+
+            let diferenciaMs = limite - hoy;
+            return Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+        }
+
+        function actualizarVista() {
+            let cuerpo = document.getElementById("tablaBody");
+            cuerpo.innerHTML = "";
+
+            let textoBusqueda = document.getElementById("buscarTexto").value.toLowerCase();
+            let filtroResp = document.getElementById("filtroResponsable").value.toLowerCase();
+            let filtroArea = document.getElementById("filtroArea").value;
+            let filtroEstado = document.getElementById("filtroEstado").value;
+
+            let pendientesCount = 0;
+            let completadosCount = 0;
+            let vencidosCount = 0;
+
+            registros.forEach((item, index) => {
+                let diasRestantes = obtenerDiferenciaDias(item.fechaLimite);
+                let estaVencido = (diasRestantes !== null && diasRestantes < 0 && item.estado !== "Completado");
+                let estaProximo = (diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 3 && item.estado !== "Completado");
+
+                if (item.estado === "Completado") {
+                    completadosCount++;
+                } else {
+                    pendientesCount++;
+                    if (estaVencido) vencidosCount++;
+                }
+
+                let coincideTexto = item.descripcion.toLowerCase().includes(textoBusqueda);
+                let coincideResp = item.responsable.toLowerCase().includes(filtroResp);
+                let coincideArea = (filtroArea === "TODAS" || item.categoria === filtroArea);
+                let coincideEstado = (filtroEstado === "TODOS" || item.estado === filtroEstado);
+
+                if (coincideTexto && coincideResp && coincideArea && coincideEstado) {
+                    let badgeClass = "badge-pendiente";
+                    if (item.estado === "En Proceso") badgeClass = "badge-proceso";
+                    if (item.estado === "Completado") badgeClass = "badge-completado";
+
+                    let claseFila = "";
+                    let mensajeAlerta = "";
+
+                    if (item.estado !== "Completado") {
+                        if (estaVencido) {
+                            claseFila = "alerta-vencido";
+                            mensajeAlerta = `<span class="alerta-texto rojo">⚠ Vencido (${Math.abs(diasRestantes)}d)</span>`;
+                        } else if (estaProximo) {
+                            claseFila = "alerta-proximo";
+                            mensajeAlerta = `<span class="alerta-texto amarillo">⏳ Vence (${diasRestantes}d)</span>`;
+                        }
+                    }
+
+                    let fechaMostrar = item.fechaLimite ? item.fechaLimite : "Sin fecha";
+
+                    cuerpo.innerHTML += `
+                        <tr class="${claseFila}">
+                            <td>${fechaMostrar} ${mensajeAlerta}</td>
+                            <td>${item.descripcion}</td>
+                            <td>${item.categoria}</td>
+                            <td><strong>${item.responsable}</strong></td>
+                            <td><span class="${badgeClass}">${item.estado}</span></td>
+                            <td>
+                                <button class="btn-accion btn-editar" onclick="cargarEdicion(${index})">Editar</button>
+                                <button class="btn-accion btn-eliminar" onclick="eliminarRegistro(${index})">Borrar</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            // Actualizar KPIs numéricos
+            let total = registros.length;
+            document.getElementById("kpiTotal").textContent = total;
+            document.getElementById("kpiPendientes").textContent = pendientesCount;
+            document.getElementById("kpiVencidos").textContent = vencidosCount;
+            document.getElementById("kpiCompletados").textContent = completadosCount;
+
+            // Porcentajes para los gráficos visuales
+            let pctCumplimiento = total > 0 ? Math.round((completadosCount / total) * 100) : 0;
+            let pctPendientes = total > 0 ? Math.round((pendientesCount / total) * 100) : 0;
+            let pctVencidos = total > 0 ? Math.round((vencidosCount / total) * 100) : 0;
+
+            document.getElementById("kpiPorcentaje").textContent = `${pctCumplimiento}%`;
+
+            // Actualizar Barras Visuales de Gráficos
+            document.getElementById("barTextCumplimiento").textContent = `${pctCumplimiento}% (${completadosCount}/${total})`;
+            document.getElementById("barFillCumplimiento").style.width = `${pctCumplimiento}%`;
+
+            document.getElementById("barTextPendientes").textContent = `${pctPendientes}% (${pendientesCount}/${total})`;
+            document.getElementById("barFillPendientes").style.width = `${pctPendientes}%`;
+
+            document.getElementById("barTextVencidos").textContent = `${pctVencidos}% (${vencidosCount}/${total})`;
+            document.getElementById("barFillVencidos").style.width = `${pctVencidos}%`;
+        }
+
+        function agregarRegistro() {
+            let desc = document.getElementById("desc").value.trim();
+            let cat = document.getElementById("categoria").value;
+            let resp = document.getElementById("responsable").value.trim() || "Sin Asignar";
+            let fechaLimite = document.getElementById("fechaLimite").value;
+            let estado = document.getElementById("estado").value;
+
+            if (desc === "") return alert("Por favor coloca una descripción.");
+
+            registros.push({ descripcion: desc, categoria: cat, responsable: resp, fechaLimite, estado });
+            guardarYLimpiar();
+        }
+
+        function cargarEdicion(index) {
+            indiceEditando = index;
+            let item = registros[index];
+
+            document.getElementById("desc").value = item.descripcion;
+            document.getElementById("categoria").value = item.categoria;
+            document.getElementById("responsable").value = item.responsable;
+            document.getElementById("fechaLimite").value = item.fechaLimite || "";
+            document.getElementById("estado").value = item.estado;
+
+            document.getElementById("btnGuardar").style.display = "none";
+            document.getElementById("btnActualizar").style.display = "block";
+        }
+
+        function guardarEdicion() {
+            if (indiceEditando === null) return;
+
+            registros[indiceEditando].descripcion = document.getElementById("desc").value.trim();
+            registros[indiceEditando].categoria = document.getElementById("categoria").value;
+            registros[indiceEditando].responsable = document.getElementById("responsable").value.trim() || "Sin Asignar";
+            registros[indiceEditando].fechaLimite = document.getElementById("fechaLimite").value;
+            registros[indiceEditando].estado = document.getElementById("estado").value;
+
+            document.getElementById("btnGuardar").style.display = "block";
+            document.getElementById("btnActualizar").style.display = "none";
+            indiceEditando = null;
+
+            guardarYLimpiar();
+        }
+
+        function eliminarRegistro(index) {
+            registros.splice(index, 1);
+            guardarYLimpiar();
+        }
+
+        function limpiarTodo() {
+            if (confirm("¿Borrar todos los registros actuales?")) {
+                registros = [];
+                guardarYLimpiar();
+            }
+        }
+
+        function limpiarFiltros() {
+            document.getElementById("buscarTexto").value = "";
+            document.getElementById("filtroResponsable").value = "";
+            document.getElementById("filtroArea").value = "TODAS";
+            document.getElementById("filtroEstado").value = "TODOS";
+            actualizarVista();
+        }
+
+        function guardarYLimpiar() {
+            localStorage.setItem("mis_registros_operativos_v3", JSON.stringify(registros));
+            
+            document.getElementById("desc").value = "";
+            document.getElementById("responsable").value = "";
+            document.getElementById("fechaLimite").value = "";
+            
+            actualizarVista();
+        }
+
+        function exportarExcel() {
+            if (registros.length === 0) return alert("No hay datos para exportar.");
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "Fecha Limite,Descripcion,Area,Responsable,Estado\n";
+
+            registros.forEach(r => {
+                csvContent += `"${r.fechaLimite || ''}","${r.descripcion}","${r.categoria}","${r.responsable}","${r.estado}"\n`;
+            });
+
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Reporte_Actividades_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importarCSV(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let lineas = e.target.result.split("\n");
+                let nuevosRegistros = [];
+
+                for (let i = 1; i < lineas.length; i++) {
+                    let linea = lineas[i].trim();
+                    if (linea) {
+                        let columnas = linea.split(",").map(col => col.replace(/^"(.*)"$/, '$1'));
+                        if (columnas.length >= 5) {
+                            nuevosRegistros.push({
+                                fechaLimite: columnas[0],
+                                descripcion: columnas[1],
+                                categoria: columnas[2],
+                                responsable: columnas[3],
+                                estado: columnas[4]
+                            });
+                        }
+                    }
+                }
+
+                if (nuevosRegistros.length > 0) {
+                    registros = nuevosRegistros;
+                    guardarYLimpiar();
+                    alert("¡Datos cargados exitosamente desde el CSV!");
+                } else {
+                    alert("El archivo CSV no tiene la estructura correcta.");
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
