@@ -631,24 +631,43 @@
         }
 
         function exportarExcel() {
-            if (registros.length === 0) return alert("No hay datos para exportar.");
+    if (registros.length === 0) return alert("No hay datos para exportar.");
 
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "Fecha Limite,Descripcion,Area,Responsable,Estado\n";
+    // 1. Construimos el contenido en texto
+    let csvContent = "\uFEFF"; // BOM para acentos y caracteres en español
+    csvContent += "Fecha Limite,Descripcion,Area,Responsable,Estado\n";
 
-            registros.forEach(r => {
-                csvContent += `"${r.fechaLimite || ''}","${r.descripcion}","${r.categoria}","${r.responsable}","${r.estado}"\n`;
-            });
+    registros.forEach(r => {
+        csvContent += `"${r.fechaLimite || ''}","${r.descripcion}","${r.categoria}","${r.responsable}","${r.estado}"\n`;
+    });
 
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Reporte_Actividades_${new Date().toLocaleDateString()}.csv`);
-            document.body.appendChild(link);
-            link.click();
+    // 2. Creamos un BLOB (Objeto binario compatible con iOS / Safari)
+    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    let filename = `Reporte_Actividades_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
+
+    // 3. Manejo especial para navegadores táctiles y de escritorio
+    if (navigator.msSaveBlob) { 
+        // Para navegadores antiguos / IE
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        // Para iOS (Safari/Chrome), Android y navegadores modernos
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        // Limpieza de memoria
+        setTimeout(() => {
             document.body.removeChild(link);
-        }
-
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
+}
         function importarCSV(event) {
             let file = event.target.files[0];
             if (!file) return;
