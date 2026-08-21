@@ -164,7 +164,7 @@
         .kpi-card h4 { margin: 0 0 5px 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
         .kpi-card .number { font-size: 20px; font-weight: bold; color: var(--text-main); }
 
-        /* Gráficos / Barras de Progreso */
+        /* Gráficos */
         .charts-section {
             background: #0f172a;
             padding: 18px;
@@ -214,7 +214,6 @@
 
         /* Botones */
         .btn-bar { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
-        .btn-group-left { display: flex; gap: 10px; }
         button { 
             padding: 10px 15px; 
             border: none; 
@@ -248,6 +247,12 @@
         .badge-proceso { background: rgba(255, 179, 0, 0.15); color: var(--accent-warning); border: 1px solid var(--accent-warning); }
         .badge-completado { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
         
+        .creador-tag {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         .alerta-texto { font-size: 10px; font-weight: bold; margin-left: 5px; }
         .alerta-texto.rojo { color: var(--accent-danger); }
         .alerta-texto.amarillo { color: var(--accent-warning); }
@@ -270,7 +275,7 @@
     <!-- Aplicativo Completo -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Control Operativo <span class="version-tag">☁ Live Cloud</span></span>
+            <span>Matriz de Control Operativo <span class="version-tag">☁ Live Cloud v3.1</span></span>
             <div class="header-actions">
                 <span id="userTag" class="user-tag">Usuario: --</span>
                 <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
@@ -392,6 +397,7 @@
                         <th>Descripción</th>
                         <th>Área</th>
                         <th>Responsable</th>
+                        <th>Creado por</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -402,7 +408,7 @@
     </div>
 
     <script>
-        // === CONFIGURACIÓN DE FIREBASE (Sustituir con tus claves) ===
+        // === CONFIGURACIÓN DE FIREBASE (Reemplaza con tus claves) ===
         const firebaseConfig = {
   apiKey: "AIzaSyDkAiU9BnVR6IUG8JcpbepCmR18yCRRx_M",
   authDomain: "control-operativo-26ec9.firebaseapp.com",
@@ -410,8 +416,9 @@
   storageBucket: "control-operativo-26ec9.firebasestorage.app",
   messagingSenderId: "791633280108",
   appId: "1:791633280108:web:c3aa0853d1271dee6b2c49"
-};
-        // Inicializar Firebase y Firestore
+
+        };
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -463,13 +470,12 @@
             document.getElementById("loginOverlay").style.display = "flex";
         }
 
-        // --- CONEXIÓN Y ESCUCHA EN TIEMPO REAL CON FIREBASE ---
         function escucharCambiosNube() {
             db.collection("actividades_operativas").onSnapshot((snapshot) => {
                 registros = [];
                 snapshot.forEach((doc) => {
                     let item = doc.data();
-                    item.id = doc.id; // Guardar el ID de Firestore
+                    item.id = doc.id;
                     registros.push(item);
                 });
                 actualizarVista();
@@ -539,6 +545,7 @@
                     }
 
                     let fechaMostrar = item.fechaLimite ? item.fechaLimite : "Sin fecha";
+                    let creadorMostrar = item.creadoPor ? item.creadoPor : "Sistema";
 
                     cuerpo.innerHTML += `
                         <tr class="${claseFila}">
@@ -546,6 +553,7 @@
                             <td>${item.descripcion}</td>
                             <td>${item.categoria}</td>
                             <td><strong>${item.responsable}</strong></td>
+                            <td><span class="creador-tag">👤 ${creadorMostrar}</span></td>
                             <td><span class="${badgeClass}">${item.estado}</span></td>
                             <td>
                                 <button class="btn-accion btn-editar" onclick="cargarEdicion('${item.id}')">Editar</button>
@@ -585,6 +593,7 @@
             let resp = document.getElementById("responsable").value.trim() || "Sin Asignar";
             let fechaLimite = document.getElementById("fechaLimite").value;
             let estado = document.getElementById("estado").value;
+            let usuarioActual = sessionStorage.getItem("usuario_autenticado") || "Anónimo";
 
             if (desc === "") return alert("Por favor coloca una descripción.");
 
@@ -594,6 +603,7 @@
                 responsable: resp,
                 fechaLimite: fechaLimite,
                 estado: estado,
+                creadoPor: usuarioActual,
                 creadoEn: new Date()
             }).then(() => {
                 limpiarFormulario();
@@ -660,10 +670,10 @@
             if (registros.length === 0) return alert("No hay datos para exportar.");
 
             let csvContent = "\uFEFF";
-            csvContent += "Fecha Limite,Descripcion,Area,Responsable,Estado\n";
+            csvContent += "Fecha Limite,Descripcion,Area,Responsable,Creado Por,Estado\n";
 
             registros.forEach(r => {
-                csvContent += `"${r.fechaLimite || ''}","${r.descripcion}","${r.categoria}","${r.responsable}","${r.estado}"\n`;
+                csvContent += `"${r.fechaLimite || ''}","${r.descripcion}","${r.categoria}","${r.responsable}","${r.creadoPor || 'Sistema'}","${r.estado}"\n`;
             });
 
             let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
