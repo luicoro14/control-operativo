@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Control Operativo - Nube Cloud</title>
+    <title>Matriz de Control Operativo - Nube Pro v4.1 Admin</title>
     <!-- Carga de SDKs de Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -118,6 +118,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .header-actions { display: flex; align-items: center; gap: 10px; }
@@ -130,6 +132,24 @@
             border-radius: 4px;
             border: 1px solid var(--border-color);
         }
+
+        .role-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .role-admin { background: rgba(0, 210, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .role-user { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+        .net-tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .net-online { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .net-offline { background: rgba(255, 82, 82, 0.15); color: var(--accent-danger); border: 1px solid var(--accent-danger); }
 
         .btn-logout {
             background: #1e293b;
@@ -227,6 +247,7 @@
         .btn-agregar:hover { background: #00b8e6; }
         .btn-actualizar { background: var(--accent-warning); color: #000; width: 100%; display: none; }
         .btn-exportar { background: #1e293b; color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .btn-archivar { background: #1e293b; color: var(--accent-warning); border: 1px solid var(--accent-warning); }
         
         .btn-accion { padding: 4px 8px; font-size: 11px; margin-right: 4px; border-radius: 4px; }
         .btn-editar { background: #334155; color: var(--accent-blue); }
@@ -275,8 +296,10 @@
     <!-- Aplicativo Completo -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Control Operativo <span class="version-tag">☁ Live Cloud v3.1</span></span>
+            <span>Matriz de Control Operativo <span class="version-tag">☁ v4.1 Admin Roles</span></span>
             <div class="header-actions">
+                <span id="netTag" class="net-tag net-online">🟢 Conectado</span>
+                <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
                 <span id="userTag" class="user-tag">Usuario: --</span>
                 <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
             </div>
@@ -308,7 +331,7 @@
 
         <!-- Gráficos -->
         <div class="charts-section">
-            <h4>📊 Avance y Distribución Operativa (Sincronizado)</h4>
+            <h4>📊 Avance y Distribución Operativa</h4>
             
             <div class="chart-row">
                 <div class="chart-label">
@@ -386,6 +409,7 @@
         <!-- Barra Global -->
         <div class="btn-bar">
             <button class="btn-exportar" onclick="exportarExcel()">📥 Exportar Reporte (CSV)</button>
+            <button id="btnArchivarCompletadas" class="btn-archivar" onclick="archivarCompletadas()">📦 Archivar Tareas Completadas (Admin)</button>
         </div>
 
         <!-- Tabla -->
@@ -408,7 +432,7 @@
     </div>
 
     <script>
-        // === CONFIGURACIÓN DE FIREBASE (Reemplaza con tus claves) ===
+        // === CONFIGURACIÓN DE FIREBASE ===
         const firebaseConfig = {
   apiKey: "AIzaSyDkAiU9BnVR6IUG8JcpbepCmR18yCRRx_M",
   authDomain: "control-operativo-26ec9.firebaseapp.com",
@@ -416,19 +440,17 @@
   storageBucket: "control-operativo-26ec9.firebasestorage.app",
   messagingSenderId: "791633280108",
   appId: "1:791633280108:web:c3aa0853d1271dee6b2c49"
-
-        };
-
+};
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // CONTROL DE USUARIOS Y ROLES (admin vs operador)
         const usuariosAutorizados = {
-            "admin": "1234",
-            "luis": "control2026",
-            "equipo": "operaciones",
-            "simón": "control2026",
-            "jacroner": "control2026",
-            "kelvin": "control2026"
+            "luis": { pass: "control1995", esAdmin: true },
+            "admin": { pass: "1234", esAdmin: true },
+            "jacroner": { pass: "operaciones", esAdmin: false },
+            "simón": { pass: "banco2026", esAdmin: false },
+            "kelvin": { pass: "control123", esAdmin: false }
         };
 
         let registros = [];
@@ -439,14 +461,33 @@
             if (usuarioSesion) {
                 mostrarAplicacion(usuarioSesion);
             }
+
+            window.addEventListener('online', actualizarEstadoRed);
+            window.addEventListener('offline', actualizarEstadoRed);
         };
+
+        function esUsuarioAdmin() {
+            let user = sessionStorage.getItem("usuario_autenticado");
+            return user && usuariosAutorizados[user] && usuariosAutorizados[user].esAdmin;
+        }
+
+        function actualizarEstadoRed() {
+            let netTag = document.getElementById("netTag");
+            if (navigator.onLine) {
+                netTag.textContent = "🟢 Conectado";
+                netTag.className = "net-tag net-online";
+            } else {
+                netTag.textContent = "🔴 Sin Conexión";
+                netTag.className = "net-tag net-offline";
+            }
+        }
 
         function autenticar() {
             let user = document.getElementById("userInput").value.trim().toLowerCase();
             let pass = document.getElementById("passInput").value.trim();
             let errorDiv = document.getElementById("loginError");
 
-            if (usuariosAutorizados[user] && usuariosAutorizados[user] === pass) {
+            if (usuariosAutorizados[user] && usuariosAutorizados[user].pass === pass) {
                 sessionStorage.setItem("usuario_autenticado", user);
                 errorDiv.style.display = "none";
                 mostrarAplicacion(user);
@@ -459,6 +500,21 @@
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("appContainer").style.display = "block";
             document.getElementById("userTag").textContent = `Usuario: ${usuario}`;
+
+            let roleTag = document.getElementById("roleTag");
+            let btnArchivar = document.getElementById("btnArchivarCompletadas");
+
+            if (esUsuarioAdmin()) {
+                roleTag.textContent = "Perfil: Administrador";
+                roleTag.className = "role-tag role-admin";
+                btnArchivar.style.display = "inline-block";
+            } else {
+                roleTag.textContent = "Perfil: Operador";
+                roleTag.className = "role-tag role-user";
+                btnArchivar.style.display = "none";
+            }
+
+            actualizarEstadoRed();
             escucharCambiosNube();
         }
 
@@ -478,6 +534,15 @@
                     item.id = doc.id;
                     registros.push(item);
                 });
+
+                registros.sort((a, b) => {
+                    let pesoEstado = { "Pendiente": 1, "En Proceso": 2, "Completado": 3 };
+                    if (pesoEstado[a.estado] !== pesoEstado[b.estado]) {
+                        return pesoEstado[a.estado] - pesoEstado[b.estado];
+                    }
+                    return (a.fechaLimite || "9999-99-99").localeCompare(b.fechaLimite || "9999-99-99");
+                });
+
                 actualizarVista();
             }, (error) => {
                 console.error("Error escuchando la nube:", error);
@@ -500,14 +565,16 @@
             let cuerpo = document.getElementById("tablaBody");
             cuerpo.innerHTML = "";
 
-            let textoBusqueda = document.getElementById("buscarTexto").value.toLowerCase();
-            let filtroResp = document.getElementById("filtroResponsable").value.toLowerCase();
+            let textoBusqueda = document.getElementById("buscarTexto").value.trim().toLowerCase();
+            let filtroResp = document.getElementById("filtroResponsable").value.trim().toLowerCase();
             let filtroArea = document.getElementById("filtroArea").value;
             let filtroEstado = document.getElementById("filtroEstado").value;
 
             let pendientesCount = 0;
             let completadosCount = 0;
             let vencidosCount = 0;
+
+            let esAdmin = esUsuarioAdmin();
 
             registros.forEach((item) => {
                 let diasRestantes = obtenerDiferenciaDias(item.fechaLimite);
@@ -547,6 +614,11 @@
                     let fechaMostrar = item.fechaLimite ? item.fechaLimite : "Sin fecha";
                     let creadorMostrar = item.creadoPor ? item.creadoPor : "Sistema";
 
+                    // BOTÓN BORRAR SOLO VISIBLE PARA ADMINISTRADORES
+                    let botonBorrarHTML = esAdmin 
+                        ? `<button class="btn-accion btn-eliminar" onclick="eliminarRegistro('${item.id}')">Borrar</button>`
+                        : `<span style="font-size:10px; color:var(--text-muted); italic">Protegido</span>`;
+
                     cuerpo.innerHTML += `
                         <tr class="${claseFila}">
                             <td>${fechaMostrar} ${mensajeAlerta}</td>
@@ -557,7 +629,7 @@
                             <td><span class="${badgeClass}">${item.estado}</span></td>
                             <td>
                                 <button class="btn-accion btn-editar" onclick="cargarEdicion('${item.id}')">Editar</button>
-                                <button class="btn-accion btn-eliminar" onclick="eliminarRegistro('${item.id}')">Borrar</button>
+                                ${botonBorrarHTML}
                             </td>
                         </tr>
                     `;
@@ -646,9 +718,42 @@
             });
         }
 
+        // VALIDACIÓN RIGUROSA EN EL INTENTO DE ELIMINAR
         function eliminarRegistro(id) {
-            if (confirm("¿Estás seguro de eliminar esta actividad de la nube para todos los usuarios?")) {
+            if (!esUsuarioAdmin()) {
+                return alert("⛔ Acción Denegada: Solo los administradores pueden eliminar registros del sistema.");
+            }
+
+            if (confirm("¿Estás seguro de eliminar esta actividad de la nube?")) {
                 db.collection("actividades_operativas").doc(id).delete();
+            }
+        }
+
+        // VALIDACIÓN RIGUROSA EN EL INTENTO DE ARCHIVAR
+        function archivarCompletadas() {
+            if (!esUsuarioAdmin()) {
+                return alert("⛔ Acción Denegada: Solo los administradores pueden archivar actividades.");
+            }
+
+            let completadas = registros.filter(r => r.estado === "Completado");
+            if (completadas.length === 0) return alert("No hay actividades completadas para archivar.");
+
+            if (confirm(`¿Deseas mover ${completadas.length} actividades completadas al archivo histórico?`)) {
+                let batch = db.batch();
+
+                completadas.forEach(item => {
+                    let docRefHistorico = db.collection("actividades_historico").doc(item.id);
+                    batch.set(docRefHistorico, { ...item, archivadoEn: new Date() });
+
+                    let docRefActivas = db.collection("actividades_operativas").doc(item.id);
+                    batch.delete(docRefActivas);
+                });
+
+                batch.commit().then(() => {
+                    alert("¡Actividades completadas archivadas con éxito!");
+                }).catch(error => {
+                    alert("Error al archivar: " + error.message);
+                });
             }
         }
 
