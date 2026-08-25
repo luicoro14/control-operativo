@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Seguimiento Operativo - Neon Pro v5.0</title>
+    <title>Matriz de Seguimiento Operativo - Full Stack v5.1</title>
     <!-- Carga de SDKs de Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -324,6 +324,8 @@
         .btn-agregar:hover { background: #00b8e6; }
         .btn-actualizar { background: var(--accent-warning); color: #000; width: 100%; display: none; }
         .btn-exportar { background: #1e293b; color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .btn-python { background: #7000ff; color: #ffffff; border: 1px solid var(--accent-blue); box-shadow: 0 0 10px rgba(112, 0, 255, 0.4); }
+        .btn-python:hover { background: #8215ff; box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); }
         .btn-archivar { background: #1e293b; color: var(--accent-warning); border: 1px solid var(--accent-warning); }
         
         .btn-accion { padding: 4px 8px; font-size: 11px; margin-right: 4px; border-radius: 4px; }
@@ -386,7 +388,7 @@
     <!-- Aplicativo Completo -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Neon Pro v5.0</span></span>
+            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Full Stack v5.1</span></span>
             <div class="header-actions">
                 <span id="netTag" class="net-tag net-online">🟢 Conectado</span>
                 <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
@@ -504,6 +506,7 @@
         <!-- Barra Global -->
         <div class="btn-bar">
             <button class="btn-exportar" onclick="exportarExcel()">📥 Exportar Reporte (CSV)</button>
+            <button class="btn-python" onclick="consultarAPIPython()">🤖 Análisis Python Engine</button>
             <button id="btnArchivarCompletadas" class="btn-archivar" onclick="archivarCompletadas()">📦 Archivar Tareas Completadas (Admin)</button>
         </div>
 
@@ -626,11 +629,9 @@
                 roleTag.className = "role-tag role-user";
                 btnArchivar.style.display = "none";
                 
-                // Restringir formulario a su área
                 selectCategoria.value = areaRestringida;
                 selectCategoria.disabled = true;
 
-                // Restringir filtro de área
                 selectFiltroArea.value = areaRestringida;
                 selectFiltroArea.disabled = true;
             } else {
@@ -659,6 +660,7 @@
                 snapshot.forEach((doc) => {
                     let item = doc.data();
                     item.id = doc.id;
+                    item.diasRestantes = obtenerDiferenciaDias(item.fechaLimite);
                     registros.push(item);
                 });
 
@@ -707,10 +709,9 @@
             let esAdmin = esUsuarioAdmin();
 
             registros.forEach((item) => {
-                // FILTRAR SI EL USUARIO TIENE ÁREA RESTRINGIDA
                 if (areaRestringida && item.categoria !== areaRestringida) return;
 
-                let diasRestantes = obtenerDiferenciaDias(item.fechaLimite);
+                let diasRestantes = item.diasRestantes;
                 let estaVencido = (diasRestantes !== null && diasRestantes < 0 && item.estado !== "Completado");
                 let estaProximo = (diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 3 && item.estado !== "Completado");
 
@@ -794,6 +795,39 @@
             document.getElementById("barFillVencidos").style.width = `${pctVencidos}%`;
         }
 
+        // --- CONEXIÓN CON EL BACKEND EN PYTHON (FASTAPI) ---
+        function consultarAPIPython() {
+            let areaRestringida = obtenerAreaRestringida();
+            let listaAnalizar = areaRestringida ? registros.filter(r => r.categoria === areaRestringida) : registros;
+
+            if (listaAnalizar.length === 0) return alert("No hay datos cargados para analizar.");
+
+            fetch("http://127.0.0.1:8000/api/analizar-rendimiento", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ actividades: listaAnalizar })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Respuesta no satisfactoria del servidor Python");
+                return response.json();
+            })
+            .then(data => {
+                alert(
+                    `🤖 ANÁLISIS PROCESADO EN PYTHON:\n\n` +
+                    `• Diagnóstico: ${data.status_operativo}\n` +
+                    `• Total Analizadas: ${data.total_procesadas}\n` +
+                    `• Tareas Vencidas: ${data.vencidas}\n` +
+                    `• En Proceso: ${data.en_proceso}\n` +
+                    `• Completadas: ${data.completadas}\n\n` +
+                    `💡 Recomendación:\n${data.recomendacion}`
+                );
+            })
+            .catch(error => {
+                alert("⚠ Error de comunicación con la API de Python.\nAsegúrate de tener ejecutando 'python -m uvicorn main:app --reload' en la consola de tu equipo.");
+                console.error("Error Python API:", error);
+            });
+        }
+
         // --- OPERACIONES EN LA NUBE ---
         function agregarRegistro() {
             let desc = document.getElementById("desc").value.trim();
@@ -838,7 +872,6 @@
             document.getElementById("estado").value = item.estado;
             document.getElementById("observaciones").value = item.observaciones || "";
 
-            // BLOQUEO DE FECHA COMPROMISO SI NO ES ADMIN
             let inputFecha = document.getElementById("fechaLimite");
             if (esUsuarioAdmin()) {
                 inputFecha.disabled = false;
