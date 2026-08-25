@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Seguimiento Operativo - SLA & Clean Excel v7.0</title>
+    <title>Matriz de Seguimiento Operativo - SLA & Excel v8.0</title>
     <!-- SDKs Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -195,11 +195,12 @@
 
         /* Botones */
         .btn-bar { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
-        button { padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        button { padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; transition: all 0.2s; }
         .btn-agregar { background: linear-gradient(90deg, var(--accent-warm-orange), var(--accent-amber)); color: #000; width: 100%; }
         .btn-actualizar { background: var(--accent-amber); color: #000; width: 100%; display: none; }
         .btn-exportar { background: #1e293b; color: var(--accent-green); border: 1px solid var(--accent-green); }
         .btn-python { background: linear-gradient(90deg, #7000ff, var(--accent-warm-orange)); color: #fff; border: 1px solid var(--accent-warm-orange); display: none; }
+        .btn-dash-excel { background: linear-gradient(90deg, #0284c7, #00e676); color: #000; font-weight: bold; border: 1px solid #00e676; display: none; }
         .btn-archivar { background: #1e293b; color: var(--accent-amber); border: 1px solid var(--accent-amber); }
         
         .btn-accion { padding: 4px 8px; font-size: 10px; margin-right: 4px; border-radius: 4px; }
@@ -256,7 +257,7 @@
     <!-- App Container -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ SLA & Excel v7.0</span></span>
+            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ SLA & Excel v8.0</span></span>
             <div class="header-actions">
                 <span id="netTag" class="net-tag net-online">🟢 Conectado</span>
                 <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
@@ -356,6 +357,7 @@
         <!-- Barra Global -->
         <div class="btn-bar">
             <button class="btn-exportar" onclick="exportarExcelOrdenado()">📊 Exportar Excel Estructurado (.csv)</button>
+            <button id="btnDashExcel" class="btn-dash-excel" onclick="descargarDashboardExcel()">📈 Descargar Dashboard SLA Excel (.xlsx)</button>
             <button id="btnPythonEngine" class="btn-python" onclick="consultarAPIPython()">🤖 Análisis Python Engine (Admin)</button>
             <button id="btnArchivarCompletadas" class="btn-archivar" onclick="archivarCompletadas()">📦 Archivar Tareas Completadas (Admin)</button>
         </div>
@@ -402,7 +404,6 @@
             "kelvin": { pass: "control123", esAdmin: false, areaRestringida: null },
             "juan": { pass: "fabrica2026", esAdmin: false, areaRestringida: "Fábrica" }
         };
-
 
         let registros = [];
         let idDocEditando = null;
@@ -455,6 +456,7 @@
             let roleTag = document.getElementById("roleTag");
             let btnArchivar = document.getElementById("btnArchivarCompletadas");
             let btnPython = document.getElementById("btnPythonEngine");
+            let btnDashExcel = document.getElementById("btnDashExcel");
             let selectCategoria = document.getElementById("categoria");
             let selectFiltroArea = document.getElementById("filtroArea");
 
@@ -462,16 +464,22 @@
 
             if (esUsuarioAdmin()) {
                 roleTag.textContent = "Perfil: Administrador"; roleTag.className = "role-tag role-admin";
-                btnArchivar.style.display = "inline-block"; btnPython.style.display = "inline-block";
+                btnArchivar.style.display = "inline-block"; 
+                btnPython.style.display = "inline-block";
+                btnDashExcel.style.display = "inline-block";
                 selectCategoria.disabled = false; selectFiltroArea.disabled = false;
             } else if (areaRestringida) {
                 roleTag.textContent = `Perfil: ${areaRestringida}`; roleTag.className = "role-tag role-user";
-                btnArchivar.style.display = "none"; btnPython.style.display = "none";
+                btnArchivar.style.display = "none"; 
+                btnPython.style.display = "none";
+                btnDashExcel.style.display = "none";
                 selectCategoria.value = areaRestringida; selectCategoria.disabled = true;
                 selectFiltroArea.value = areaRestringida; selectFiltroArea.disabled = true;
             } else {
                 roleTag.textContent = "Perfil: Operador"; roleTag.className = "role-tag role-user";
-                btnArchivar.style.display = "none"; btnPython.style.display = "none";
+                btnArchivar.style.display = "none"; 
+                btnPython.style.display = "none";
+                btnDashExcel.style.display = "none";
                 selectCategoria.disabled = false; selectFiltroArea.disabled = false;
             }
 
@@ -653,6 +661,36 @@
             .catch(err => alert("Error de conexión con la API de Python. Verifica que el servidor esté corriendo en el puerto 8000."));
         }
 
+        // DESCARGA DEL DASHBOARD EN EXCEL (.XLSX) GENERADO DESDE PYTHON
+        function descargarDashboardExcel() {
+            if (!esUsuarioAdmin()) return alert("Acceso denegado: Solo administradores pueden generar este informe.");
+            if (registros.length === 0) return alert("No hay datos cargados.");
+
+            fetch("http://127.0.0.1:8000/api/descargar-dashboard-excel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ actividades: registros })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error generando reporte en el servidor Python");
+                return response.blob();
+            })
+            .then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let a = document.createElement('a');
+                a.href = url;
+                a.download = `Dashboard_Gestion_SLA_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                alert("Error de conexión con la API Python. Verifica que el backend esté activo en el puerto 8000.");
+                console.error(error);
+            });
+        }
+
         function agregarRegistro() {
             let desc = document.getElementById("desc").value.trim();
             let cat = document.getElementById("categoria").value;
@@ -775,13 +813,12 @@
             if (area) document.getElementById("categoria").value = area;
         }
 
-        // EXPORTACIÓN EXCEL ESTRUCTURADA Y ORDENADA POR COLUMNAS
+        // EXPORTACIÓN EXCEL ESTRUCTURADA Y ORDENADA POR COLUMNAS (.CSV)
         function exportarExcelOrdenado() {
             if (registros.length === 0) return alert("No hay datos para exportar.");
             let areaRestringida = obtenerAreaRestringida();
             let listaExportar = areaRestringida ? registros.filter(r => r.categoria === areaRestringida) : registros;
 
-            // Encabezado con instrucción de separador ';' para Excel en Español
             let csvContent = "\uFEFFsep=;\n";
             csvContent += "Fecha Compromiso;Fecha Cierre Real;Descripción;Área;Responsable;Observaciones / Avances;Creado Por;Última Modificación;Estado\n";
 
