@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Seguimiento Operativo - Avila Warm Edition v6.0</title>
+    <title>Matriz de Seguimiento Operativo - SLA & Clean Excel v7.0</title>
     <!-- SDKs Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -32,7 +32,7 @@
             color: var(--text-main); 
         }
 
-        /* === INICIO ÁVILA WARM NEÓN === */
+        /* INICIO ÁVILA WARM NEÓN */
         .login-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -52,7 +52,7 @@
             padding: 35px 25px;
             border-radius: 20px;
             border: 1px solid rgba(255, 107, 53, 0.4);
-            box-shadow: 0 0 35px rgba(255, 107, 53, 0.25), inset 0 0 15px rgba(247, 184, 1, 0.1);
+            box-shadow: 0 0 35px rgba(255, 107, 53, 0.25);
             width: 100%;
             max-width: 400px;
             text-align: center;
@@ -72,7 +72,6 @@
             color: var(--text-muted);
             font-size: 11px;
             margin-bottom: 25px;
-            letter-spacing: 1px;
             text-transform: uppercase;
         }
 
@@ -88,7 +87,6 @@
             color: var(--text-main);
             outline: none;
             text-align: center;
-            transition: all 0.3s;
         }
 
         .login-box input:focus {
@@ -105,28 +103,16 @@
             border-radius: 10px;
             border: none;
             font-weight: bold;
-            letter-spacing: 1px;
             text-transform: uppercase;
             cursor: pointer;
             box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
-            transition: all 0.3s ease;
         }
 
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(255, 107, 53, 0.7);
-        }
+        .login-error { color: var(--accent-magenta); font-size: 12px; margin-top: 15px; display: none; }
 
-        .login-error {
-            color: var(--accent-magenta);
-            font-size: 12px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        /* === CONTENEDOR PRINCIPAL === */
+        /* CONTAINER PRINCIPAL */
         .container { 
-            max-width: 1300px; 
+            max-width: 1350px; 
             margin: 0 auto; 
             background: var(--bg-card); 
             padding: 20px; 
@@ -167,35 +153,22 @@
         .version-tag { background: var(--bg-input); color: var(--accent-amber); border-color: var(--accent-amber); }
 
         .btn-logout {
-            background: #1e293b;
-            color: var(--accent-magenta);
-            border: 1px solid var(--accent-magenta);
-            padding: 5px 10px;
-            font-size: 11px;
-            border-radius: 6px;
-            cursor: pointer;
+            background: #1e293b; color: var(--accent-magenta); border: 1px solid var(--accent-magenta);
+            padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;
         }
 
-        /* KPIs y Gráficos */
+        /* KPIs */
         .kpi-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .kpi-card { 
-            flex: 1; 
-            min-width: 140px;
-            background: var(--bg-principal); 
-            border-left: 4px solid var(--accent-warm-orange); 
-            padding: 12px; 
-            border-radius: 10px; 
-            border: 1px solid var(--border-color);
+            flex: 1; min-width: 140px; background: var(--bg-principal); 
+            border-left: 4px solid var(--accent-warm-orange); padding: 12px; 
+            border-radius: 10px; border: 1px solid var(--border-color);
         }
         .kpi-card h4 { margin: 0 0 5px 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
         .kpi-card .number { font-size: 18px; font-weight: bold; }
 
         .charts-section {
-            background: #0f1520;
-            padding: 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
+            background: #0f1520; padding: 16px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color);
         }
         .charts-section h4 { margin: 0 0 12px 0; font-size: 12px; color: var(--accent-warm-orange); text-transform: uppercase; }
         .chart-row { margin-bottom: 10px; }
@@ -203,48 +176,29 @@
         .progress-bar-bg { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
         .progress-bar-fill { height: 100%; width: 0%; transition: width 0.4s ease; }
 
-        /* Formulario y Filtros (Responsivo) */
+        /* Formulario y Filtros */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px; }
         .form-grid-row2 { margin-bottom: 15px; }
         .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
 
         input, select, textarea { 
-            padding: 10px; 
-            background: var(--bg-input); 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            font-size: 12px; 
-            color: var(--text-main);
-            outline: none;
-            width: 100%;
-            font-family: inherit;
+            padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); 
+            border-radius: 8px; font-size: 12px; color: var(--text-main); outline: none; width: 100%; font-family: inherit;
         }
         input:focus, select:focus, textarea:focus { border-color: var(--accent-warm-orange); }
         textarea { resize: vertical; min-height: 45px; }
 
         .filter-section { 
-            background: #0f1520; 
-            padding: 12px; 
-            border-radius: 10px; 
-            margin-bottom: 20px; 
-            border: 1px solid var(--border-color);
+            background: #0f1520; padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color);
         }
         .filter-section label { font-size: 11px; font-weight: bold; color: var(--accent-warm-orange); display: block; margin-bottom: 8px; }
 
         /* Botones */
         .btn-bar { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
-        button { 
-            padding: 10px 14px; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 12px;
-            transition: all 0.2s; 
-        }
+        button { padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .btn-agregar { background: linear-gradient(90deg, var(--accent-warm-orange), var(--accent-amber)); color: #000; width: 100%; }
         .btn-actualizar { background: var(--accent-amber); color: #000; width: 100%; display: none; }
-        .btn-exportar { background: #1e293b; color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .btn-exportar { background: #1e293b; color: var(--accent-green); border: 1px solid var(--accent-green); }
         .btn-python { background: linear-gradient(90deg, #7000ff, var(--accent-warm-orange)); color: #fff; border: 1px solid var(--accent-warm-orange); display: none; }
         .btn-archivar { background: #1e293b; color: var(--accent-amber); border: 1px solid var(--accent-amber); }
         
@@ -252,9 +206,9 @@
         .btn-editar { background: #334155; color: var(--accent-blue); }
         .btn-eliminar { background: #334155; color: var(--accent-magenta); }
 
-        /* Tabla Adaptable */
+        /* Tabla */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 850px; }
         th, td { padding: 10px; border: 1px solid var(--border-color); text-align: left; font-size: 12px; }
         th { background-color: var(--bg-principal); color: var(--accent-warm-orange); font-size: 11px; text-transform: uppercase; }
         tr:nth-child(even) { background-color: #121824; }
@@ -276,8 +230,6 @@
         @media (max-width: 768px) {
             body { padding: 8px; }
             .container { padding: 12px; }
-            h2 { font-size: 15px; }
-            .kpi-card .number { font-size: 16px; }
             button { width: 100%; }
             .btn-bar { flex-direction: column; }
         }
@@ -285,7 +237,7 @@
 </head>
 <body>
 
-    <!-- Pantalla de Inicio "Ávila Neón Warm" -->
+    <!-- Pantalla de Inicio -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
             <h3>Matriz de Seguimiento Operativo</h3>
@@ -301,10 +253,10 @@
         </div>
     </div>
 
-    <!-- Aplicativo Completo -->
+    <!-- App Container -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Warm Avila v6.0</span></span>
+            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ SLA & Excel v7.0</span></span>
             <div class="header-actions">
                 <span id="netTag" class="net-tag net-online">🟢 Conectado</span>
                 <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
@@ -331,9 +283,9 @@
                 <h4>Completadas</h4>
                 <div class="number" id="kpiCompletados">0</div>
             </div>
-            <div class="kpi-card" style="border-left-color: var(--accent-warm-orange);">
-                <h4>Cumplimiento Global</h4>
-                <div class="number" id="kpiPorcentaje">0%</div>
+            <div class="kpi-card" style="border-left-color: var(--accent-blue);">
+                <h4>Cumplimiento SLA</h4>
+                <div class="number" id="kpiSLA" style="color: var(--accent-blue);">100%</div>
             </div>
         </div>
 
@@ -403,7 +355,7 @@
 
         <!-- Barra Global -->
         <div class="btn-bar">
-            <button class="btn-exportar" onclick="exportarExcel()">📥 Exportar Reporte (CSV)</button>
+            <button class="btn-exportar" onclick="exportarExcelOrdenado()">📊 Exportar Excel Estructurado (.csv)</button>
             <button id="btnPythonEngine" class="btn-python" onclick="consultarAPIPython()">🤖 Análisis Python Engine (Admin)</button>
             <button id="btnArchivarCompletadas" class="btn-archivar" onclick="archivarCompletadas()">📦 Archivar Tareas Completadas (Admin)</button>
         </div>
@@ -430,7 +382,6 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
   apiKey: "AIzaSyDkAiU9BnVR6IUG8JcpbepCmR18yCRRx_M",
   authDomain: "control-operativo-26ec9.firebaseapp.com",
@@ -476,11 +427,9 @@
         function actualizarEstadoRed() {
             let netTag = document.getElementById("netTag");
             if (navigator.onLine) {
-                netTag.textContent = "🟢 Conectado";
-                netTag.className = "net-tag net-online";
+                netTag.textContent = "🟢 Conectado"; netTag.className = "net-tag net-online";
             } else {
-                netTag.textContent = "🔴 Sin Conexión";
-                netTag.className = "net-tag net-offline";
+                netTag.textContent = "🔴 Sin Conexión"; netTag.className = "net-tag net-offline";
             }
         }
 
@@ -512,28 +461,18 @@
             let areaRestringida = obtenerAreaRestringida();
 
             if (esUsuarioAdmin()) {
-                roleTag.textContent = "Perfil: Administrador";
-                roleTag.className = "role-tag role-admin";
-                btnArchivar.style.display = "inline-block";
-                btnPython.style.display = "inline-block"; // EXCLUSIVO PARA ADMIN
-                selectCategoria.disabled = false;
-                selectFiltroArea.disabled = false;
+                roleTag.textContent = "Perfil: Administrador"; roleTag.className = "role-tag role-admin";
+                btnArchivar.style.display = "inline-block"; btnPython.style.display = "inline-block";
+                selectCategoria.disabled = false; selectFiltroArea.disabled = false;
             } else if (areaRestringida) {
-                roleTag.textContent = `Perfil: ${areaRestringida}`;
-                roleTag.className = "role-tag role-user";
-                btnArchivar.style.display = "none";
-                btnPython.style.display = "none";
-                selectCategoria.value = areaRestringida;
-                selectCategoria.disabled = true;
-                selectFiltroArea.value = areaRestringida;
-                selectFiltroArea.disabled = true;
+                roleTag.textContent = `Perfil: ${areaRestringida}`; roleTag.className = "role-tag role-user";
+                btnArchivar.style.display = "none"; btnPython.style.display = "none";
+                selectCategoria.value = areaRestringida; selectCategoria.disabled = true;
+                selectFiltroArea.value = areaRestringida; selectFiltroArea.disabled = true;
             } else {
-                roleTag.textContent = "Perfil: Operador";
-                roleTag.className = "role-tag role-user";
-                btnArchivar.style.display = "none";
-                btnPython.style.display = "none";
-                selectCategoria.disabled = false;
-                selectFiltroArea.disabled = false;
+                roleTag.textContent = "Perfil: Operador"; roleTag.className = "role-tag role-user";
+                btnArchivar.style.display = "none"; btnPython.style.display = "none";
+                selectCategoria.disabled = false; selectFiltroArea.disabled = false;
             }
 
             actualizarEstadoRed();
@@ -560,9 +499,7 @@
 
                 registros.sort((a, b) => {
                     let pesoEstado = { "Pendiente": 1, "En Proceso": 2, "Completado": 3 };
-                    if (pesoEstado[a.estado] !== pesoEstado[b.estado]) {
-                        return pesoEstado[a.estado] - pesoEstado[b.estado];
-                    }
+                    if (pesoEstado[a.estado] !== pesoEstado[b.estado]) return pesoEstado[a.estado] - pesoEstado[b.estado];
                     return (a.fechaLimite || "9999-99-99").localeCompare(b.fechaLimite || "9999-99-99");
                 });
 
@@ -589,7 +526,7 @@
             let areaRestringida = obtenerAreaRestringida();
             if (areaRestringida) filtroArea = areaRestringida;
 
-            let pendientesCount = 0, completadosCount = 0, vencidosCount = 0;
+            let pendientesCount = 0, completadosCount = 0, vencidosCount = 0, completadosATiempo = 0;
             let esAdmin = esUsuarioAdmin();
 
             registros.forEach((item) => {
@@ -599,8 +536,12 @@
                 let estaVencido = (diasRestantes !== null && diasRestantes < 0 && item.estado !== "Completado");
                 let estaProximo = (diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 5 && item.estado !== "Completado");
 
-                if (item.estado === "Completado") completadosCount++;
-                else {
+                if (item.estado === "Completado") {
+                    completadosCount++;
+                    if (!item.fechaCierre || (item.fechaLimite && item.fechaCierre <= item.fechaLimite)) {
+                        completadosATiempo++;
+                    }
+                } else {
                     pendientesCount++;
                     if (estaVencido) vencidosCount++;
                 }
@@ -662,11 +603,13 @@
             document.getElementById("kpiVencidos").textContent = vencidosCount;
             document.getElementById("kpiCompletados").textContent = completadosCount;
 
+            let pctSLA = completadosCount > 0 ? Math.round((completadosATiempo / completadosCount) * 100) : 100;
+            document.getElementById("kpiSLA").textContent = `${pctSLA}%`;
+
             let pctCumplimiento = total > 0 ? Math.round((completadosCount / total) * 100) : 0;
             let pctPendientes = total > 0 ? Math.round((pendientesCount / total) * 100) : 0;
             let pctVencidos = total > 0 ? Math.round((vencidosCount / total) * 100) : 0;
 
-            document.getElementById("kpiPorcentaje").textContent = `${pctCumplimiento}%`;
             document.getElementById("barTextCumplimiento").textContent = `${pctCumplimiento}% (${completadosCount}/${total})`;
             document.getElementById("barFillCumplimiento").style.width = `${pctCumplimiento}%`;
             document.getElementById("barTextPendientes").textContent = `${pctPendientes}% (${pendientesCount}/${total})`;
@@ -675,7 +618,6 @@
             document.getElementById("barFillVencidos").style.width = `${pctVencidos}%`;
         }
 
-        // LLAMADA AL BACKEND EN PYTHON (ALERTAS A 5 DÍAS EXCLUSIVO ADMIN)
         function consultarAPIPython() {
             if (!esUsuarioAdmin()) return alert("Acceso restringido a administradores.");
             if (registros.length === 0) return alert("No hay actividades cargadas.");
@@ -698,12 +640,12 @@
                 }
 
                 alert(
-                    `🤖 ANÁLISIS EXECUTIVO PYTHON (ADMIN):\n\n` +
+                    `🤖 ANÁLISIS EJECUTIVO DE SLA & EFICIENCIA:\n\n` +
                     `• Diagnóstico: ${data.status_operativo}\n` +
+                    `• Cumplimiento SLA: ${data.sla_cumplimiento}\n` +
                     `• Total Analizadas: ${data.total_procesadas}\n` +
-                    `• Vencidas: ${data.vencidas}\n` +
-                    `• En Proceso: ${data.en_proceso}\n` +
-                    `• Completadas: ${data.completadas}\n\n` +
+                    `• Vencidas Activas: ${data.vencidas}\n` +
+                    `• Desviación Acumulada: ${data.desviacion_acumulada_dias} días\n\n` +
                     `💡 Recomendación:\n${data.recomendacion}` +
                     detalleAlertas
                 );
@@ -724,10 +666,14 @@
             if (areaRestringida) cat = areaRestringida;
             if (desc === "") return alert("Coloca una descripción.");
 
+            let hoyStr = new Date().toISOString().split("T")[0];
+            let fechaCierreFinal = (estado === "Completado") ? hoyStr : null;
+
             db.collection("actividades_operativas").add({
                 descripcion: desc, categoria: cat, responsable: resp,
                 fechaLimite: fechaLimite, estado: estado, observaciones: observaciones,
-                creadoPor: usuarioActual, modificadoPor: usuarioActual, creadoEn: new Date()
+                creadoPor: usuarioActual, modificadoPor: usuarioActual,
+                fechaCierre: fechaCierreFinal, creadoEn: new Date()
             }).then(() => limpiarFormulario()).catch(e => alert(e.message));
         }
 
@@ -755,6 +701,16 @@
             let usuarioActual = obtenerUsuarioSesion() || "Anónimo";
             let itemOriginal = registros.find(r => r.id === idDocEditando);
 
+            let nuevoEstado = document.getElementById("estado").value;
+            let hoyStr = new Date().toISOString().split("T")[0];
+            let fechaCierreFinal = itemOriginal ? itemOriginal.fechaCierre : null;
+
+            if (nuevoEstado === "Completado" && itemOriginal.estado !== "Completado") {
+                fechaCierreFinal = hoyStr;
+            } else if (nuevoEstado !== "Completado") {
+                fechaCierreFinal = null;
+            }
+
             let fechaLimiteFinal = esUsuarioAdmin() 
                 ? document.getElementById("fechaLimite").value 
                 : (itemOriginal ? itemOriginal.fechaLimite : document.getElementById("fechaLimite").value);
@@ -768,9 +724,10 @@
                 categoria: catFinal,
                 responsable: document.getElementById("responsable").value.trim() || "Sin Asignar",
                 fechaLimite: fechaLimiteFinal,
-                estado: document.getElementById("estado").value,
+                estado: nuevoEstado,
                 observaciones: document.getElementById("observaciones").value.trim(),
-                modificadoPor: usuarioActual
+                modificadoPor: usuarioActual,
+                fechaCierre: fechaCierreFinal
             }).then(() => {
                 document.getElementById("btnGuardar").style.display = "block";
                 document.getElementById("btnActualizar").style.display = "none";
@@ -818,21 +775,27 @@
             if (area) document.getElementById("categoria").value = area;
         }
 
-        function exportarExcel() {
+        // EXPORTACIÓN EXCEL ESTRUCTURADA Y ORDENADA POR COLUMNAS
+        function exportarExcelOrdenado() {
             if (registros.length === 0) return alert("No hay datos para exportar.");
             let areaRestringida = obtenerAreaRestringida();
             let listaExportar = areaRestringida ? registros.filter(r => r.categoria === areaRestringida) : registros;
 
-            let csvContent = "\uFEFFFecha Compromiso,Descripcion,Area,Responsable,Observaciones,Creado Por,Ultima Modificacion,Estado\n";
+            // Encabezado con instrucción de separador ';' para Excel en Español
+            let csvContent = "\uFEFFsep=;\n";
+            csvContent += "Fecha Compromiso;Fecha Cierre Real;Descripción;Área;Responsable;Observaciones / Avances;Creado Por;Última Modificación;Estado\n";
+
             listaExportar.forEach(r => {
+                let descLimpia = (r.descripcion || '').replace(/"/g, '""').replace(/\n/g, ' ');
                 let obsLimpia = (r.observaciones || '').replace(/"/g, '""').replace(/\n/g, ' ');
-                csvContent += `"${r.fechaLimite || ''}","${r.descripcion}","${r.categoria}","${r.responsable}","${obsLimpia}","${r.creadoPor || 'Sistema'}","${r.modificadoPor || '--'}","${r.estado}"\n`;
+                
+                csvContent += `"${r.fechaLimite || ''}";"${r.fechaCierre || ''}";"${descLimpia}";"${r.categoria}";"${r.responsable}";"${obsLimpia}";"${r.creadoPor || 'Sistema'}";"${r.modificadoPor || '--'}";"${r.estado}"\n`;
             });
 
             let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             let link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `Reporte_Seguimiento_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
+            link.download = `Matriz_Seguimiento_Operativo_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
             link.click();
         }
     </script>
