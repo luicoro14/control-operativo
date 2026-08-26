@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Seguimiento Operativo - Executive Cloud v9.0</title>
+    <title>Matriz de Seguimiento Operativo - Executive Cloud v9.5</title>
     <!-- SDKs Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    <!-- Librería para Generar Excel .xlsx Gerencial en Frontend sin Python -->
+    <!-- Librería para Generar Excel .xlsx Gerencial Nativo sin Servidor -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -193,9 +193,9 @@
     <!-- App Container -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Autonomous Cloud v9.0</span></span>
+            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Executive Cloud v9.5</span></span>
             <div class="header-actions">
-                <span id="netTag" class="net-tag net-online">🟢 Conectado</span>
+                <span id="netTag" class="net-tag net-online">🟢 Conectado Nube</span>
                 <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
                 <span id="userTag" class="user-tag">Usuario: --</span>
                 <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
@@ -559,7 +559,7 @@
             document.getElementById("barFillVencidos").style.width = `${pctVencidos}%`;
         }
 
-        // GENERADOR DE DASHBOARD EN EXCEL GERENCIAL v9.0 (EJECUCIÓN NATIVA 100% EN FRONTEND)
+        // GENERADOR DE DASHBOARD EJECUTIVO v9.5 - RANKING & AUTO-FIT (100% ONLINE)
         function generarExcelGerencialNativo() {
             if (!esUsuarioAdmin()) return alert("Acceso denegado: Solo administradores pueden generar este informe.");
             if (registros.length === 0) return alert("No hay datos cargados.");
@@ -567,14 +567,20 @@
             let hoyStr = new Date().toISOString().split('T')[0];
             let wb = XLSX.utils.book_new();
 
-            // PESTAÑA 1: RESUMEN EJECUTIVO
+            // 1. PROCESAMIENTO DE DATOS Y CÁLCULO DE RANKINGS
             let statsArea = {};
+            let statsResp = {};
             let totalCompletadas = 0, totalATiempo = 0, totalVencidas = 0, desviacionTotal = 0;
 
             registros.forEach(r => {
                 let area = r.categoria || 'General';
-                if (!statsArea[area]) statsArea[area] = { total: 0, aTiempo: 0, retrasadas: 0 };
+                let resp = r.responsable || 'Sin Asignar';
+
+                if (!statsArea[area]) statsArea[area] = { total: 0, aTiempo: 0, desviadas: 0 };
+                if (!statsResp[resp]) statsResp[resp] = { total: 0, aTiempo: 0, desviadas: 0 };
+
                 statsArea[area].total++;
+                statsResp[resp].total++;
 
                 if (r.estado === "Completado") {
                     totalCompletadas++;
@@ -585,8 +591,14 @@
                         let diff = Math.ceil((cie - lim) / (1000 * 60 * 60 * 24));
                         if (diff > 0) { cumplio = false; desviacionTotal += diff; }
                     }
-                    if (cumplio) { totalATiempo++; statsArea[area].aTiempo++; }
-                    else { statsArea[area].retrasadas++; }
+                    if (cumplio) { 
+                        totalATiempo++; 
+                        statsArea[area].aTiempo++; 
+                        statsResp[resp].aTiempo++; 
+                    } else { 
+                        statsArea[area].desviadas++; 
+                        statsResp[resp].desviadas++; 
+                    }
                 } else {
                     if (r.diasRestantes !== null && r.diasRestantes < 0) totalVencidas++;
                 }
@@ -594,26 +606,51 @@
 
             let slaGlobal = totalCompletadas > 0 ? Math.round((totalATiempo / totalCompletadas) * 100) : 100;
 
+            // 2. CONSTRUCCIÓN DE LA PESTAÑA 1: RESUMEN EJECUTIVO & RANKINGS
             let rowsDash = [
                 ["INFORME DE GESTIÓN OPERATIVA & CUMPLIMIENTO SLA"],
+                ["Generado dinámicamente el: " + hoyStr],
                 [],
-                ["CUMPLIMIENTO SLA GLOBAL", `${slaGlobal}%`, "TOTAL TAREAS", registros.length, "TAREAS VENCIDAS", totalVencidas, "DESVIACIÓN ACUMULADA", `${desviacionTotal} días`],
+                ["MÉTRICAS CLAVE DE GESTIÓN (KPIs)"],
+                ["CUMPLIMIENTO SLA GLOBAL", `${slaGlobal}%`, "TOTAL ACTIVIDADES", registros.length, "TAREAS VENCIDAS", totalVencidas, "DÍAS DESVIACIÓN ACUM.", `${desviacionTotal} días`],
                 [],
-                ["DESGLOSE DE EFICIENCIA POR ÁREA OPERATIVA"],
-                ["Área Operativa", "Total Tareas", "A Tiempo", "Desviadas", "% SLA Eficiencia"]
+                ["🏆 RANKING DE EFICIENCIA POR ÁREA OPERATIVA"],
+                ["Posición", "Área Operativa", "Total Requerimientos", "Cumplidos a Tiempo", "Desviados", "% Eficiencia SLA", "Estatus"]
             ];
 
-            Object.keys(statsArea).forEach(area => {
+            // Ordenar Áreas por Ranking de Eficiencia (% SLA descendente)
+            let rankingAreas = Object.keys(statsArea).map(area => {
                 let d = statsArea[area];
                 let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
-                rowsDash.push([area, d.total, d.aTiempo, d.retrasadas, `${eff}%`]);
+                return { area, total: d.total, aTiempo: d.aTiempo, desviadas: d.desviadas, eff };
+            }).sort((a, b) => b.eff - a.eff);
+
+            rankingAreas.forEach((item, index) => {
+                let estatus = item.eff >= 80 ? "ÓPTIMO 🟢" : "REQUIERE AJUSTE 🔴";
+                rowsDash.push([`#${index + 1}`, item.area, item.total, item.aTiempo, item.desviadas, `${item.eff}%`, estatus]);
+            });
+
+            rowsDash.push([]);
+            rowsDash.push(["👤 RANKING DE RENDIMIENTO INDIVIDUAL POR RESPONSABLE"]);
+            rowsDash.push(["Posición", "Responsable", "Tareas Asignadas", "Entregas a Tiempo", "Entregas Fuera de SLA", "% Efectividad", "Desempeño"]);
+
+            // Ordenar Responsables por Ranking de Eficiencia
+            let rankingResp = Object.keys(statsResp).map(resp => {
+                let d = statsResp[resp];
+                let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
+                return { resp, total: d.total, aTiempo: d.aTiempo, desviadas: d.desviadas, eff };
+            }).sort((a, b) => b.eff - a.eff);
+
+            rankingResp.forEach((item, index) => {
+                let calificacion = item.eff >= 85 ? "Alto Rendimiento 🌟" : (item.eff >= 70 ? "En Rango 🟡" : "Atención Requerida 🔴");
+                rowsDash.push([`#${index + 1}`, item.resp, item.total, item.aTiempo, item.desviadas, `${item.eff}%`, calificacion]);
             });
 
             let wsDash = XLSX.utils.aoa_to_sheet(rowsDash);
 
-            // PESTAÑA 2: DETALLE OPERATIVO
+            // 3. CONSTRUCCIÓN DE LA PESTAÑA 2: DETALLE ACTIVIDAD POR ACTIVIDAD
             let rowsDetalle = [
-                ["Fecha Compromiso", "Fecha Cierre Real", "Descripción", "Área", "Responsable", "Observaciones", "Estado", "SLA Individual", "Días Desviación"]
+                ["Fecha Compromiso", "Fecha Cierre Real", "Descripción de la Actividad", "Área", "Responsable", "Observaciones / Avances", "Estado", "SLA Individual", "Días Desviación"]
             ];
 
             registros.forEach(r => {
@@ -645,10 +682,29 @@
 
             let wsDetalle = XLSX.utils.aoa_to_sheet(rowsDetalle);
 
-            XLSX.utils.book_append_sheet(wb, wsDash, "Resumen Ejecutivo");
+            // 4. AUTO-AJUSTE DINÁMICO DE ANCHOS DE COLUMNA (AUTO-FIT)
+            [wsDash, wsDetalle].forEach(ws => {
+                let range = XLSX.utils.decode_range(ws['!ref']);
+                let colWidths = [];
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxLen = 10;
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        let cell = ws[XLSX.utils.encode_cell({ c: C, r: R })];
+                        if (cell && cell.v) {
+                            let len = cell.v.toString().length;
+                            if (len > maxLen) maxLen = len;
+                        }
+                    }
+                    colWidths.push({ wch: Math.min(maxLen + 4, 45) });
+                }
+                ws['!cols'] = colWidths;
+            });
+
+            // 5. COMPILACIÓN Y DESCARGA AUTOMÁTICA
+            XLSX.utils.book_append_sheet(wb, wsDash, "Resumen & Rankings SLA");
             XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle Operativo");
 
-            XLSX.writeFile(wb, `Dashboard_Gestion_SLA_${hoyStr}.xlsx`);
+            XLSX.writeFile(wb, `Dashboard_Ejecutivo_SLA_${hoyStr}.xlsx`);
         }
 
         function agregarRegistro() {
