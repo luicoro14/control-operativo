@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Seguimiento Operativo - Server Mode v8.0</title>
+    <title>Matriz de Seguimiento Operativo - Executive Cloud v9.0</title>
+    <!-- SDKs Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <!-- Librería para Generar Excel .xlsx Gerencial en Frontend sin Python -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
         :root {
             --bg-principal: #0b0e14;
@@ -29,6 +33,7 @@
             background: var(--bg-principal); color: var(--text-main); 
         }
 
+        /* LOGIN ÁVILA WARM NEÓN RESPONSIVO */
         .login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(180deg, rgba(11, 14, 20, 0.45) 0%, rgba(11, 14, 20, 0.95) 100%),
@@ -65,6 +70,7 @@
 
         .login-error { color: var(--accent-magenta); font-size: 12px; margin-top: 15px; display: none; }
 
+        /* CONTENEDOR PRINCIPAL AUTÓNOMO */
         .container { 
             max-width: 1350px; margin: 0 auto; background: var(--bg-card); padding: 20px; 
             border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1px solid var(--border-color); display: none;
@@ -93,6 +99,7 @@
             padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;
         }
 
+        /* TARJETAS KPI RESPONSIVAS */
         .kpi-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .kpi-card { 
             flex: 1; min-width: 140px; background: var(--bg-principal); border-left: 4px solid var(--accent-warm-orange); 
@@ -108,6 +115,7 @@
         .progress-bar-bg { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
         .progress-bar-fill { height: 100%; width: 0%; transition: width 0.4s ease; }
 
+        /* FORMULARIO Y FILTROS */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px; }
         .form-grid-row2 { margin-bottom: 15px; }
         .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
@@ -122,12 +130,12 @@
         .filter-section { background: #0f1520; padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .filter-section label { font-size: 11px; font-weight: bold; color: var(--accent-warm-orange); display: block; margin-bottom: 8px; }
 
+        /* BARRA DE BOTONES */
         .btn-bar { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
         button { padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; transition: all 0.2s; }
         .btn-agregar { background: linear-gradient(90deg, var(--accent-warm-orange), var(--accent-amber)); color: #000; width: 100%; }
         .btn-actualizar { background: var(--accent-amber); color: #000; width: 100%; display: none; }
         .btn-exportar { background: #1e293b; color: var(--accent-green); border: 1px solid var(--accent-green); }
-        .btn-python { background: linear-gradient(90deg, #7000ff, var(--accent-warm-orange)); color: #fff; border: 1px solid var(--accent-warm-orange); display: none; }
         .btn-dash-excel { background: linear-gradient(90deg, #0284c7, #00e676); color: #000; font-weight: bold; border: 1px solid #00e676; display: none; }
         .btn-archivar { background: #1e293b; color: var(--accent-amber); border: 1px solid var(--accent-amber); }
         
@@ -135,6 +143,7 @@
         .btn-editar { background: #334155; color: var(--accent-blue); }
         .btn-eliminar { background: #334155; color: var(--accent-magenta); }
 
+        /* TABLA GERENCIAL DE ALTA DENSIDAD */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 850px; }
         th, td { padding: 10px; border: 1px solid var(--border-color); text-align: left; font-size: 12px; }
@@ -165,10 +174,11 @@
 </head>
 <body>
 
+    <!-- Pantalla de Inicio / Autenticación -->
     <div id="loginOverlay" class="login-overlay">
         <div class="login-box">
             <h3>Matriz de Seguimiento Operativo</h3>
-            <p>Acceso al Sistema en Tiempo Real</p>
+            <p>Acceso Ejecutivos & Operación Cloud</p>
             <div class="input-group">
                 <input type="text" id="userInput" placeholder="Usuario" autocomplete="off">
             </div>
@@ -180,9 +190,10 @@
         </div>
     </div>
 
+    <!-- App Container -->
     <div id="appContainer" class="container">
         <h2>
-            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Server Mode v8.0</span></span>
+            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Autonomous Cloud v9.0</span></span>
             <div class="header-actions">
                 <span id="netTag" class="net-tag net-online">🟢 Conectado</span>
                 <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
@@ -191,6 +202,7 @@
             </div>
         </h2>
 
+        <!-- KPIs en Tiempo Real -->
         <div class="kpi-container">
             <div class="kpi-card">
                 <h4>Total Actividades</h4>
@@ -214,6 +226,7 @@
             </div>
         </div>
 
+        <!-- Barras de Distribución -->
         <div class="charts-section">
             <h4>📊 Avance y Distribución Operativa</h4>
             <div class="chart-row">
@@ -230,6 +243,7 @@
             </div>
         </div>
 
+        <!-- Formulario -->
         <div class="form-grid">
             <input type="text" id="desc" placeholder="Descripción de la actividad">
             <select id="categoria">
@@ -253,6 +267,7 @@
         <button id="btnGuardar" class="btn-agregar" onclick="agregarRegistro()">+ Guardar Actividad en Nube</button>
         <button id="btnActualizar" class="btn-actualizar" onclick="guardarEdicion()">✏ Guardar Cambios</button>
 
+        <!-- Filtros -->
         <div class="filter-section" style="margin-top: 15px;">
             <label>🔍 FILTRAR ACTIVIDADES EN TIEMPO REAL</label>
             <div class="filter-grid">
@@ -275,13 +290,14 @@
             <button style="margin-top: 10px; background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); width: 100%;" onclick="limpiarFiltros()">Limpiar Filtros</button>
         </div>
 
+        <!-- Barra de Acciones Globales -->
         <div class="btn-bar">
             <button class="btn-exportar" onclick="exportarExcelOrdenado()">📊 Exportar CSV (.csv)</button>
-            <button id="btnDashExcel" class="btn-dash-excel" onclick="descargarDashboardExcel()">📈 Descargar Dashboard SLA Excel (.xlsx)</button>
-            <button id="btnPythonEngine" class="btn-python" onclick="consultarAPIPython()">🤖 Análisis Python Engine (Admin)</button>
+            <button id="btnDashExcel" class="btn-dash-excel" onclick="generarExcelGerencialNativo()">📈 Descargar Dashboard SLA Excel (.xlsx)</button>
             <button id="btnArchivarCompletadas" class="btn-archivar" onclick="archivarCompletadas()">📦 Archivar Tareas Completadas (Admin)</button>
         </div>
 
+        <!-- Tabla de Datos -->
         <div class="table-responsive">
             <table>
                 <thead>
@@ -303,6 +319,7 @@
     </div>
 
     <script>
+        // CONFIGURACIÓN DE FIREBASE EN LA NUBE
         const firebaseConfig = {
   apiKey: "AIzaSyDkAiU9BnVR6IUG8JcpbepCmR18yCRRx_M",
   authDomain: "control-operativo-26ec9.firebaseapp.com",
@@ -348,7 +365,7 @@
         function actualizarEstadoRed() {
             let netTag = document.getElementById("netTag");
             if (navigator.onLine) {
-                netTag.textContent = "🟢 Conectado"; netTag.className = "net-tag net-online";
+                netTag.textContent = "🟢 Conectado Nube"; netTag.className = "net-tag net-online";
             } else {
                 netTag.textContent = "🔴 Sin Conexión"; netTag.className = "net-tag net-offline";
             }
@@ -375,7 +392,6 @@
 
             let roleTag = document.getElementById("roleTag");
             let btnArchivar = document.getElementById("btnArchivarCompletadas");
-            let btnPython = document.getElementById("btnPythonEngine");
             let btnDashExcel = document.getElementById("btnDashExcel");
             let selectCategoria = document.getElementById("categoria");
             let selectFiltroArea = document.getElementById("filtroArea");
@@ -385,20 +401,17 @@
             if (esUsuarioAdmin()) {
                 roleTag.textContent = "Perfil: Administrador"; roleTag.className = "role-tag role-admin";
                 btnArchivar.style.display = "inline-block"; 
-                btnPython.style.display = "inline-block";
                 btnDashExcel.style.display = "inline-block";
                 selectCategoria.disabled = false; selectFiltroArea.disabled = false;
             } else if (areaRestringida) {
                 roleTag.textContent = `Perfil: ${areaRestringida}`; roleTag.className = "role-tag role-user";
                 btnArchivar.style.display = "none"; 
-                btnPython.style.display = "none";
                 btnDashExcel.style.display = "none";
                 selectCategoria.value = areaRestringida; selectCategoria.disabled = true;
                 selectFiltroArea.value = areaRestringida; selectFiltroArea.disabled = true;
             } else {
                 roleTag.textContent = "Perfil: Operador"; roleTag.className = "role-tag role-user";
                 btnArchivar.style.display = "none"; 
-                btnPython.style.display = "none";
                 btnDashExcel.style.display = "none";
                 selectCategoria.disabled = false; selectFiltroArea.disabled = false;
             }
@@ -546,66 +559,96 @@
             document.getElementById("barFillVencidos").style.width = `${pctVencidos}%`;
         }
 
-        // LLAMADA RELATIVA AL SERVIDOR
-        function consultarAPIPython() {
-            if (!esUsuarioAdmin()) return alert("Acceso restringido a administradores.");
-            if (registros.length === 0) return alert("No hay actividades cargadas.");
-
-            fetch("/api/analizar-rendimiento", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ actividades: registros })
-            })
-            .then(res => res.json())
-            .then(data => {
-                let detalleAlertas = "";
-                if (data.alertas_proximas.length > 0) {
-                    detalleAlertas = "\n\n🔔 ALERTAS PREVENTIVAS (PRÓXIMOS 5 DÍAS):\n";
-                    data.alertas_proximas.forEach((a, index) => {
-                        detalleAlertas += `${index + 1}. [${a.responsable}] "${a.descripcion}" - Vence en ${a.dias} día(s) (${a.fecha})\n`;
-                    });
-                } else {
-                    detalleAlertas = "\n\n✨ No hay tareas pendientes por vencer en los próximos 5 días.";
-                }
-
-                alert(
-                    `🤖 ANÁLISIS EJECUTIVO DE SLA & EFICIENCIA:\n\n` +
-                    `• Diagnóstico: ${data.status_operativo}\n` +
-                    `• Cumplimiento SLA: ${data.sla_cumplimiento}\n` +
-                    `• Total Analizadas: ${data.total_procesadas}\n` +
-                    `• Vencidas Activas: ${data.vencidas}\n` +
-                    `• Desviación Acumulada: ${data.desviacion_acumulada_dias} días\n\n` +
-                    `💡 Recomendación:\n${data.recomendacion}` +
-                    detalleAlertas
-                );
-            })
-            .catch(err => alert("Error conectando con la API de Python."));
-        }
-
-        function descargarDashboardExcel() {
+        // GENERADOR DE DASHBOARD EN EXCEL GERENCIAL v9.0 (EJECUCIÓN NATIVA 100% EN FRONTEND)
+        function generarExcelGerencialNativo() {
             if (!esUsuarioAdmin()) return alert("Acceso denegado: Solo administradores pueden generar este informe.");
             if (registros.length === 0) return alert("No hay datos cargados.");
 
-            fetch("/api/descargar-dashboard-excel", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ actividades: registros })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error("Error generando el Dashboard");
-                return response.blob();
-            })
-            .then(blob => {
-                let url = window.URL.createObjectURL(blob);
-                let a = document.createElement('a');
-                a.href = url;
-                a.download = `Dashboard_Gestion_SLA_${new Date().toISOString().split('T')[0]}.xlsx`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-            })
-            .catch(error => alert("Error descargando el reporte Excel."));
+            let hoyStr = new Date().toISOString().split('T')[0];
+            let wb = XLSX.utils.book_new();
+
+            // PESTAÑA 1: RESUMEN EJECUTIVO
+            let statsArea = {};
+            let totalCompletadas = 0, totalATiempo = 0, totalVencidas = 0, desviacionTotal = 0;
+
+            registros.forEach(r => {
+                let area = r.categoria || 'General';
+                if (!statsArea[area]) statsArea[area] = { total: 0, aTiempo: 0, retrasadas: 0 };
+                statsArea[area].total++;
+
+                if (r.estado === "Completado") {
+                    totalCompletadas++;
+                    let cumplio = true;
+                    if (r.fechaLimite) {
+                        let lim = new Date(r.fechaLimite);
+                        let cie = r.fechaCierre ? new Date(r.fechaCierre) : new Date();
+                        let diff = Math.ceil((cie - lim) / (1000 * 60 * 60 * 24));
+                        if (diff > 0) { cumplio = false; desviacionTotal += diff; }
+                    }
+                    if (cumplio) { totalATiempo++; statsArea[area].aTiempo++; }
+                    else { statsArea[area].retrasadas++; }
+                } else {
+                    if (r.diasRestantes !== null && r.diasRestantes < 0) totalVencidas++;
+                }
+            });
+
+            let slaGlobal = totalCompletadas > 0 ? Math.round((totalATiempo / totalCompletadas) * 100) : 100;
+
+            let rowsDash = [
+                ["INFORME DE GESTIÓN OPERATIVA & CUMPLIMIENTO SLA"],
+                [],
+                ["CUMPLIMIENTO SLA GLOBAL", `${slaGlobal}%`, "TOTAL TAREAS", registros.length, "TAREAS VENCIDAS", totalVencidas, "DESVIACIÓN ACUMULADA", `${desviacionTotal} días`],
+                [],
+                ["DESGLOSE DE EFICIENCIA POR ÁREA OPERATIVA"],
+                ["Área Operativa", "Total Tareas", "A Tiempo", "Desviadas", "% SLA Eficiencia"]
+            ];
+
+            Object.keys(statsArea).forEach(area => {
+                let d = statsArea[area];
+                let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
+                rowsDash.push([area, d.total, d.aTiempo, d.retrasadas, `${eff}%`]);
+            });
+
+            let wsDash = XLSX.utils.aoa_to_sheet(rowsDash);
+
+            // PESTAÑA 2: DETALLE OPERATIVO
+            let rowsDetalle = [
+                ["Fecha Compromiso", "Fecha Cierre Real", "Descripción", "Área", "Responsable", "Observaciones", "Estado", "SLA Individual", "Días Desviación"]
+            ];
+
+            registros.forEach(r => {
+                let slaInd = "Pendiente";
+                let diasDesv = 0;
+                if (r.estado === "Completado") {
+                    if (r.fechaLimite) {
+                        let lim = new Date(r.fechaLimite);
+                        let cie = r.fechaCierre ? new Date(r.fechaCierre) : new Date();
+                        diasDesv = Math.ceil((cie - lim) / (1000 * 60 * 60 * 24));
+                        slaInd = diasDesv <= 0 ? "Cumplido 🟢" : "Desviado 🔴";
+                    } else { slaInd = "Cumplido 🟢"; }
+                } else {
+                    slaInd = (r.diasRestantes !== null && r.diasRestantes < 0) ? "Vencido 🔴" : "En Plazo ⏳";
+                }
+
+                rowsDetalle.push([
+                    r.fechaLimite || '--',
+                    r.fechaCierre || '--',
+                    r.descripcion || '',
+                    r.categoria || '',
+                    r.responsable || '',
+                    r.observaciones || '',
+                    r.estado || '',
+                    slaInd,
+                    diasDesv
+                ]);
+            });
+
+            let wsDetalle = XLSX.utils.aoa_to_sheet(rowsDetalle);
+
+            XLSX.utils.book_append_sheet(wb, wsDash, "Resumen Ejecutivo");
+            XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle Operativo");
+
+            XLSX.writeFile(wb, `Dashboard_Gestion_SLA_${hoyStr}.xlsx`);
         }
 
         function agregarRegistro() {
