@@ -2,324 +2,501 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriz de Seguimiento Operativo - Executive Cloud v9.5</title>
-    <!-- SDKs Firebase -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Matriz de Seguimiento Operativo v20.1 Light-Executive</title>
+
+    <!-- Frameworks & Firebase SDKs (Compat) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    <!-- Librería para Generar Excel .xlsx Gerencial Nativo sin Servidor -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        :root {
-            --bg-principal: #0b0e14;
-            --bg-card: #141a24;
-            --bg-input: #1a2332;
-            --accent-warm-orange: #ff6b35;
-            --accent-amber: #f7b801;
-            --accent-magenta: #e63946;
-            --accent-green: #00e676;
-            --accent-blue: #00f0ff;
-            --text-main: #f8f9fa;
-            --text-muted: #94a3b8;
-            --border-color: #27354a;
+        body {
+            background-color: #F8FAFC;
+            color: #1E293B;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+            overflow-x: hidden;
         }
 
-        * { box-sizing: border-box; }
-
-        body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-            margin: 0; padding: 15px; 
-            background: var(--bg-principal); color: var(--text-main); 
+        @media (min-width: 768px) {
+            body { padding-bottom: 2rem; }
         }
 
-        /* LOGIN ÁVILA WARM NEÓN RESPONSIVO */
-        .login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, rgba(11, 14, 20, 0.45) 0%, rgba(11, 14, 20, 0.95) 100%),
-                        url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
-            display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px;
+        .card-light {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
         }
 
-        .login-box {
-            background: rgba(20, 26, 36, 0.88); backdrop-filter: blur(18px);
-            padding: 35px 25px; border-radius: 20px; border: 1px solid rgba(255, 107, 53, 0.4);
-            box-shadow: 0 0 35px rgba(255, 107, 53, 0.25); width: 100%; max-width: 400px; text-align: center;
+        .input-light {
+            background-color: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            border-radius: 12px;
+            padding: 0.65rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #0F172A;
+            outline: none;
+            transition: all 0.2s;
         }
 
-        .login-box h3 {
-            color: var(--accent-warm-orange); margin: 0 0 6px 0; font-size: 21px; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 12px rgba(255, 107, 53, 0.6);
+        .input-light:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            background-color: #FFFFFF;
         }
 
-        .login-box p { color: var(--text-muted); font-size: 11px; margin-bottom: 25px; text-transform: uppercase; }
-        .input-group { margin-bottom: 16px; }
-
-        .login-box input {
-            width: 100%; padding: 12px 15px; background: var(--bg-input); border: 1px solid var(--border-color);
-            border-radius: 10px; font-size: 13px; color: var(--text-main); outline: none; text-align: center;
+        .badge-estado {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 8px;
         }
 
-        .login-box input:focus { border-color: var(--accent-warm-orange); box-shadow: 0 0 12px rgba(255, 107, 53, 0.4); }
+        .badge-pendiente { background-color: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; }
+        .badge-proceso { background-color: #E0F2FE; color: #0284C7; border: 1px solid #BAE6FD; }
+        .badge-completado { background-color: #DCFCE7; color: #16A34A; border: 1px solid #BBF7D0; }
 
-        .login-btn {
-            background: linear-gradient(90deg, var(--accent-warm-orange), var(--accent-amber));
-            color: #000; width: 100%; padding: 13px; font-size: 14px; border-radius: 10px; border: none;
-            font-weight: bold; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+        .nav-tab {
+            color: #64748B;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            transition: all 0.2s;
         }
 
-        .login-error { color: var(--accent-magenta); font-size: 12px; margin-top: 15px; display: none; }
-
-        /* CONTENEDOR PRINCIPAL AUTÓNOMO */
-        .container { 
-            max-width: 1350px; margin: 0 auto; background: var(--bg-card); padding: 20px; 
-            border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1px solid var(--border-color); display: none;
-        }
-        
-        h2 { 
-            color: var(--accent-warm-orange); margin-top: 0; border-bottom: 2px solid var(--border-color); 
-            padding-bottom: 12px; text-transform: uppercase; font-size: 18px; display: flex;
-            justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+        .nav-tab.active {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
-        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-        .user-tag, .role-tag, .net-tag, .version-tag {
-            font-size: 11px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--border-color); font-weight: bold;
-        }
-        .user-tag { background: var(--bg-input); color: var(--accent-blue); }
-        .role-admin { background: rgba(255, 107, 53, 0.15); color: var(--accent-warm-orange); border-color: var(--accent-warm-orange); }
-        .role-user { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
-        .net-online { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border-color: var(--accent-green); }
-        .net-offline { background: rgba(230, 57, 70, 0.15); color: var(--accent-magenta); border-color: var(--accent-magenta); }
-        .version-tag { background: var(--bg-input); color: var(--accent-amber); border-color: var(--accent-amber); }
-
-        .btn-logout {
-            background: #1e293b; color: var(--accent-magenta); border: 1px solid var(--accent-magenta);
-            padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;
+        .login-logo-animated {
+            animation: floatLogo 3s infinite ease-in-out;
         }
 
-        /* TARJETAS KPI RESPONSIVAS */
-        .kpi-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .kpi-card { 
-            flex: 1; min-width: 140px; background: var(--bg-principal); border-left: 4px solid var(--accent-warm-orange); 
-            padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);
-        }
-        .kpi-card h4 { margin: 0 0 5px 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
-        .kpi-card .number { font-size: 18px; font-weight: bold; }
-
-        .charts-section { background: #0f1520; padding: 16px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .charts-section h4 { margin: 0 0 12px 0; font-size: 12px; color: var(--accent-warm-orange); text-transform: uppercase; }
-        .chart-row { margin-bottom: 10px; }
-        .chart-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .progress-bar-bg { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); }
-        .progress-bar-fill { height: 100%; width: 0%; transition: width 0.4s ease; }
-
-        /* FORMULARIO Y FILTROS */
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px; }
-        .form-grid-row2 { margin-bottom: 15px; }
-        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
-
-        input, select, textarea { 
-            padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); 
-            border-radius: 8px; font-size: 12px; color: var(--text-main); outline: none; width: 100%; font-family: inherit;
-        }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent-warm-orange); }
-        textarea { resize: vertical; min-height: 45px; }
-
-        .filter-section { background: #0f1520; padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .filter-section label { font-size: 11px; font-weight: bold; color: var(--accent-warm-orange); display: block; margin-bottom: 8px; }
-
-        /* BARRA DE BOTONES */
-        .btn-bar { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; }
-        button { padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; transition: all 0.2s; }
-        .btn-agregar { background: linear-gradient(90deg, var(--accent-warm-orange), var(--accent-amber)); color: #000; width: 100%; }
-        .btn-actualizar { background: var(--accent-amber); color: #000; width: 100%; display: none; }
-        .btn-exportar { background: #1e293b; color: var(--accent-green); border: 1px solid var(--accent-green); }
-        .btn-dash-excel { background: linear-gradient(90deg, #0284c7, #00e676); color: #000; font-weight: bold; border: 1px solid #00e676; display: none; }
-        .btn-archivar { background: #1e293b; color: var(--accent-amber); border: 1px solid var(--accent-amber); }
-        
-        .btn-accion { padding: 4px 8px; font-size: 10px; margin-right: 4px; border-radius: 4px; }
-        .btn-editar { background: #334155; color: var(--accent-blue); }
-        .btn-eliminar { background: #334155; color: var(--accent-magenta); }
-
-        /* TABLA GERENCIAL DE ALTA DENSIDAD */
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 850px; }
-        th, td { padding: 10px; border: 1px solid var(--border-color); text-align: left; font-size: 12px; }
-        th { background-color: var(--bg-principal); color: var(--accent-warm-orange); font-size: 11px; text-transform: uppercase; }
-        tr:nth-child(even) { background-color: #121824; }
-
-        tr.alerta-vencido { background-color: rgba(230, 57, 70, 0.15) !important; }
-        tr.alerta-proximo { background-color: rgba(247, 184, 1, 0.12) !important; }
-
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; text-align: center; display: inline-block; }
-        .badge-pendiente { background: rgba(230, 57, 70, 0.15); color: var(--accent-magenta); border: 1px solid var(--accent-magenta); }
-        .badge-proceso { background: rgba(247, 184, 1, 0.15); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
-        .badge-completado { background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
-        
-        .creador-tag { font-size: 10px; color: var(--text-muted); font-style: italic; }
-        .alerta-texto { font-size: 10px; font-weight: bold; margin-left: 4px; }
-        .alerta-texto.rojo { color: var(--accent-magenta); }
-        .alerta-texto.amarillo { color: var(--accent-amber); }
-        .obs-cell { max-width: 180px; white-space: pre-wrap; word-break: break-word; font-size: 11px; color: #cbd5e1; }
-
-        @media (max-width: 768px) {
-            body { padding: 8px; }
-            .container { padding: 12px; }
-            button { width: 100%; }
-            .btn-bar { flex-direction: column; }
+        @keyframes floatLogo {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
         }
     </style>
 </head>
-<body>
+<body ng-app="matrizApp" ng-controller="MatrizController">
 
-    <!-- Pantalla de Inicio / Autenticación -->
-    <div id="loginOverlay" class="login-overlay">
-        <div class="login-box">
-            <h3>Matriz de Seguimiento Operativo</h3>
-            <p>Acceso Ejecutivos & Operación Cloud</p>
-            <div class="input-group">
-                <input type="text" id="userInput" placeholder="Usuario" autocomplete="off">
+    <!-- LOGIN CLARO -->
+    <div id="loginOverlay" ng-if="!sesionIniciada" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm">
+        <div class="card-light p-8 max-w-md w-full text-center shadow-2xl space-y-5 border border-slate-200">
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-4xl shadow-lg shadow-blue-500/30 login-logo-animated">
+                📊
             </div>
-            <div class="input-group">
-                <input type="password" id="passInput" placeholder="Contraseña">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Matriz Operativa</h2>
+                <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mt-1">Light-Executive Edition v20.1</p>
             </div>
-            <button class="login-btn" onclick="autenticar()">Ingresar al Sistema</button>
-            <div id="loginError" class="login-error">⚠ Credenciales Inválidas</div>
+
+            <form ng-submit="iniciarSesion()" class="space-y-4 pt-2">
+                <input type="text" ng-model="loginUser" placeholder="Usuario registrado" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" class="input-light w-full text-center font-bold">
+                <input type="password" ng-model="loginPass" placeholder="Contraseña" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password" class="input-light w-full text-center font-bold">
+
+                <button type="submit" ng-disabled="cargandoLogin" class="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm uppercase shadow-lg shadow-blue-600/30 active:scale-95 transition">
+                    {{ cargandoLogin ? 'Verificando...' : 'Ingresar al Sistema' }}
+                </button>
+            </form>
+
+            <p ng-show="loginError" class="text-xs text-red-600 font-bold">⚠ Credenciales incorrectas</p>
         </div>
     </div>
 
-    <!-- App Container -->
-    <div id="appContainer" class="container">
-        <h2>
-            <span>Matriz de Seguimiento Operativo <span class="version-tag">☁ Executive Cloud v9.5</span></span>
-            <div class="header-actions">
-                <span id="netTag" class="net-tag net-online">🟢 Conectado Nube</span>
-                <span id="roleTag" class="role-tag role-user">Perfil: Operador</span>
-                <span id="userTag" class="user-tag">Usuario: --</span>
-                <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
-            </div>
-        </h2>
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div ng-if="sesionIniciada">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 py-3.5 shadow-sm">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-lg shadow-md">
+                        M
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-800 tracking-tight uppercase">MATRIZ OPERATIVA</h1>
+                        <p class="text-[10px] sm:text-xs text-slate-500 font-semibold">Usuario: {{ usuarioSesion }} <span class="text-blue-600 font-bold">({{ rolUsuario }})</span></p>
+                    </div>
+                </div>
 
-        <!-- KPIs en Tiempo Real -->
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <h4>Total Actividades</h4>
-                <div class="number" id="kpiTotal">0</div>
-            </div>
-            <div class="kpi-card" style="border-left-color: var(--accent-amber);">
-                <h4>Pendientes / Proceso</h4>
-                <div class="number" id="kpiPendientes">0</div>
-            </div>
-            <div class="kpi-card" style="border-left-color: var(--accent-magenta);">
-                <h4>Tareas Vencidas</h4>
-                <div class="number" id="kpiVencidos">0</div>
-            </div>
-            <div class="kpi-card" style="border-left-color: var(--accent-green);">
-                <h4>Completadas</h4>
-                <div class="number" id="kpiCompletados">0</div>
-            </div>
-            <div class="kpi-card" style="border-left-color: var(--accent-blue);">
-                <h4>Cumplimiento SLA</h4>
-                <div class="number" id="kpiSLA" style="color: var(--accent-blue);">100%</div>
-            </div>
-        </div>
+                <div class="hidden md:flex items-center gap-3">
+                    <button ng-click="solicitarPermisoPush()" class="text-xs font-bold text-amber-700 bg-amber-50 px-3.5 py-2 rounded-xl border border-amber-200 flex items-center gap-1.5 hover:bg-amber-100 transition">
+                        🔔 Push
+                    </button>
 
-        <!-- Barras de Distribución -->
-        <div class="charts-section">
-            <h4>📊 Avance y Distribución Operativa</h4>
-            <div class="chart-row">
-                <div class="chart-label"><span>Cumplimiento General</span><strong id="barTextCumplimiento">0%</strong></div>
-                <div class="progress-bar-bg"><div id="barFillCumplimiento" class="progress-bar-fill" style="background: var(--accent-green);"></div></div>
-            </div>
-            <div class="chart-row">
-                <div class="chart-label"><span>Carga Pendiente / En Proceso</span><strong id="barTextPendientes">0%</strong></div>
-                <div class="progress-bar-bg"><div id="barFillPendientes" class="progress-bar-fill" style="background: var(--accent-amber);"></div></div>
-            </div>
-            <div class="chart-row">
-                <div class="chart-label"><span>Tareas Vencidas</span><strong id="barTextVencidos">0%</strong></div>
-                <div class="progress-bar-bg"><div id="barFillVencidos" class="progress-bar-fill" style="background: var(--accent-magenta);"></div></div>
-            </div>
-        </div>
+                    <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button class="nav-tab" ng-class="{'active': seccionActiva === 'matriz'}" ng-click="seccionActiva = 'matriz'">📋 Matriz</button>
+                        <button class="nav-tab" ng-class="{'active': seccionActiva === 'calendario'}" ng-click="seccionActiva = 'calendario'">📅 Agenda & SLAs</button>
+                        <button class="nav-tab" ng-class="{'active': seccionActiva === 'sugerencias'}" ng-click="seccionActiva = 'sugerencias'">💡 Sugerencias</button>
+                        <button class="nav-tab" ng-show="esSuperAdmin" ng-class="{'active': seccionActiva === 'admin'}" ng-click="seccionActiva = 'admin'">⚙ Admin</button>
+                    </div>
 
-        <!-- Formulario -->
-        <div class="form-grid">
-            <input type="text" id="desc" placeholder="Descripción de la actividad">
-            <select id="categoria">
-                <option value="Servicios bancarios">Servicios bancarios</option>
-                <option value="Recaudación especializada">Recaudación especializada</option>
-                <option value="Control contable">Control contable</option>
-                <option value="Fábrica">Fábrica</option>
-            </select>
-            <input type="text" id="responsable" placeholder="Responsable asignado">
-            <input type="date" id="fechaLimite" title="Fecha de Compromiso">
-            <select id="estado">
-                <option value="Pendiente">Pendiente</option>
-                <option value="En Proceso">En Proceso</option>
-                <option value="Completado">Completado</option>
-            </select>
-        </div>
-        <div class="form-grid-row2">
-            <textarea id="observaciones" placeholder="Observaciones / Detalle de avances del requerimiento..."></textarea>
-        </div>
-        
-        <button id="btnGuardar" class="btn-agregar" onclick="agregarRegistro()">+ Guardar Actividad en Nube</button>
-        <button id="btnActualizar" class="btn-actualizar" onclick="guardarEdicion()">✏ Guardar Cambios</button>
-
-        <!-- Filtros -->
-        <div class="filter-section" style="margin-top: 15px;">
-            <label>🔍 FILTRAR ACTIVIDADES EN TIEMPO REAL</label>
-            <div class="filter-grid">
-                <input type="text" id="buscarTexto" placeholder="Buscar por palabra clave..." oninput="actualizarVista()">
-                <input type="text" id="filtroResponsable" placeholder="Filtrar por Responsable..." oninput="actualizarVista()">
-                <select id="filtroArea" onchange="actualizarVista()">
-                    <option value="TODAS">Todas las Áreas</option>
-                    <option value="Servicios bancarios">Servicios bancarios</option>
-                    <option value="Recaudación especializada">Recaudación especializada</option>
-                    <option value="Control contable">Control contable</option>
-                    <option value="Fábrica">Fábrica</option>
-                </select>
-                <select id="filtroEstado" onchange="actualizarVista()">
-                    <option value="TODOS">Todos los Estados</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En Proceso">En Proceso</option>
-                    <option value="Completado">Completado</option>
-                </select>
+                    <a href="intranet.html" class="text-xs font-bold text-blue-600 bg-blue-50 px-3.5 py-2 rounded-xl border border-blue-200 flex items-center gap-1 hover:bg-blue-100 transition">
+                        🏢 Hub Operativo
+                    </a>
+                    
+                    <button ng-click="cerrarSesion()" class="text-xs font-bold text-red-600 bg-red-50 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-100 transition">Salir</button>
+                </div>
             </div>
-            <button style="margin-top: 10px; background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); width: 100%;" onclick="limpiarFiltros()">Limpiar Filtros</button>
-        </div>
+        </header>
 
-        <!-- Barra de Acciones Globales -->
-        <div class="btn-bar">
-            <button class="btn-exportar" onclick="exportarExcelOrdenado()">📊 Exportar CSV (.csv)</button>
-            <button id="btnDashExcel" class="btn-dash-excel" onclick="generarExcelGerencialNativo()">📈 Descargar Dashboard SLA Excel (.xlsx)</button>
-            <button id="btnArchivarCompletadas" class="btn-archivar" onclick="archivarCompletadas()">📦 Archivar Tareas Completadas (Admin)</button>
-        </div>
+        <main id="pdfReportContainer" class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
 
-        <!-- Tabla de Datos -->
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha Compromiso</th>
-                        <th>Descripción</th>
-                        <th>Área</th>
-                        <th>Responsable</th>
-                        <th>Observaciones / Avances</th>
-                        <th>Creado por</th>
-                        <th>Última Modificación</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaBody"></tbody>
-            </table>
-        </div>
+            <!-- 1. SECCIÓN MATRIZ OPERATIVA -->
+            <div ng-show="seccionActiva === 'matriz'" class="space-y-6">
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-800 p-6 sm:p-8 text-white shadow-xl">
+                    <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Gestión de Requerimientos</span>
+                            <h2 class="text-2xl sm:text-3xl font-black mt-2">Control de Operaciones & SLAs</h2>
+                        </div>
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                            <button ng-click="exportarPDF()" class="px-4 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs uppercase shadow-md hover:bg-slate-800 transition">
+                                📄 Reporte PDF
+                            </button>
+                            <button ng-click="exportarExcel()" class="px-4 py-3 rounded-2xl bg-white text-blue-700 font-black text-xs uppercase shadow-md hover:bg-blue-50 transition">
+                                📥 Exportar Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIS -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Total Actividades</span>
+                        <div class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ actividadesVisibles.length }}</div>
+                    </div>
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-amber-600 uppercase">Pendientes</span>
+                        <div class="text-2xl sm:text-3xl font-black text-amber-600 mt-1">{{ contarPorEstado('Pendiente') }}</div>
+                    </div>
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-sky-600 uppercase">En Proceso</span>
+                        <div class="text-2xl sm:text-3xl font-black text-sky-600 mt-1">{{ contarPorEstado('En Proceso') }}</div>
+                    </div>
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase">Completadas</span>
+                        <div class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{{ contarPorEstado('Completado') }}</div>
+                    </div>
+                </div>
+
+                <!-- REGISTRO DE NUEVA ACTIVIDAD -->
+                <div class="card-light p-5 sm:p-6 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="text-sm sm:text-base font-black text-slate-800 uppercase">➕ Registrar Requerimiento con Documentación & Audio</h3>
+                        <button type="button" ng-click="limpiarFormularioNuevaActividad()" class="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition">
+                            🧹 Limpiar
+                        </button>
+                    </div>
+
+                    <form ng-submit="agregarActividad()" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Descripción del Requerimiento</label>
+                                <input type="text" ng-model="nuevaAct.descripcion" required placeholder="Ej: Conciliación de cuentas..." class="input-light w-full">
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Gerencia / Área</label>
+                                <select ng-model="nuevaAct.categoria" required class="input-light w-full">
+                                    <option value="Servicios bancarios" ng-show="puedesVerArea('Servicios bancarios')">Servicios bancarios</option>
+                                    <option value="Recaudación especializada" ng-show="puedesVerArea('Recaudación especializada')">Recaudación especializada</option>
+                                    <option value="Control contable" ng-show="puedesVerArea('Control contable')">Control contable</option>
+                                    <option value="Fábrica" ng-show="puedesVerArea('Fábrica')">Fábrica</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Responsable</label>
+                                <input type="text" ng-model="nuevaAct.responsable" required placeholder="Responsable" class="input-light w-full">
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Estado Inicial</label>
+                                <select ng-model="nuevaAct.estado" required class="input-light w-full">
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="En Proceso">En Proceso</option>
+                                    <option value="Completado">Completado</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Fecha Compromiso (SLA) 🔒</label>
+                                <input type="date" ng-model="nuevaAct.fechaLimiteInput" required class="input-light w-full">
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Observaciones Iniciales</label>
+                                <input type="text" ng-model="nuevaAct.observaciones" placeholder="Detalles de ejecución..." class="input-light w-full">
+                            </div>
+                        </div>
+
+                        <!-- ADJUNTOS MULTIMEDIA -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 uppercase block mb-1">📄 Adjuntar Documento de Soporte (Word, Excel, PDF):</label>
+                                <input type="file" id="docFileInput" onchange="angular.element(this).scope().cargarArchivoDoc(this)" class="text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700">
+                                <span ng-if="nuevaAct.docNombre" class="text-[10px] font-bold text-emerald-600 block mt-1">✔ Cargado: {{ nuevaAct.docNombre }}</span>
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 uppercase block mb-1">🎙 Grabar Avance / Instrucción por Voz (Gerencia):</label>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" ng-click="toggleGrabarAudio()" class="px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-sm transition" ng-class="{'bg-red-600 text-white animate-pulse': grabandoAudio, 'bg-blue-600 text-white': !grabandoAudio}">
+                                        {{ grabandoAudio ? '⏹ Detener Grabación' : '🎤 Grabar Nota de Voz' }}
+                                    </button>
+                                    <span ng-if="nuevaAct.audioUrl" class="text-[10px] font-bold text-emerald-600">✔ Audio grabado</span>
+                                </div>
+                                <audio ng-if="nuevaAct.audioUrl" controls ng-src="{{ nuevaAct.audioUrl }}" class="w-full h-8 mt-2 rounded-lg border border-slate-200"></audio>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase shadow-md active:scale-95 transition">
+                            + Guardar Requerimiento Completo
+                        </button>
+                    </form>
+                </div>
+
+                <!-- TABLA MATRIZ CON BOTÓN DE MODIFICAR -->
+                <div class="card-light p-5 sm:p-6 space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-100 pb-3">
+                        <h3 class="text-sm sm:text-base font-black text-slate-800 uppercase">📋 Registro General de la Matriz</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full md:w-auto">
+                            <select ng-model="filtroArea" class="input-light text-xs">
+                                <option value="">🏢 Todas las Áreas</option>
+                                <option value="Servicios bancarios">Servicios bancarios</option>
+                                <option value="Recaudación especializada">Recaudación especializada</option>
+                                <option value="Control contable">Control contable</option>
+                                <option value="Fábrica">Fábrica</option>
+                            </select>
+
+                            <select ng-model="filtroEstado" class="input-light text-xs">
+                                <option value="">⚡ Todos los Estados</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En Proceso">En Proceso</option>
+                                <option value="Completado">Completado</option>
+                            </select>
+
+                            <input type="text" ng-model="busquedaMatriz" placeholder="🔍 Buscar..." class="input-light text-xs">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse min-w-[950px]">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase text-[10px]">
+                                    <th class="p-3 font-black">Requerimiento</th>
+                                    <th class="p-3 font-black">Área</th>
+                                    <th class="p-3 font-black">Responsable</th>
+                                    <th class="p-3 font-black">Estado</th>
+                                    <th class="p-3 font-black">SLA 🔒</th>
+                                    <th class="p-3 font-black">Soporte (Doc)</th>
+                                    <th class="p-3 font-black">Avance Audio</th>
+                                    <th class="p-3 font-black text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="act in actividadesVisibles | filter:{categoria: filtroArea, estado: filtroEstado} | filter:busquedaMatriz" class="border-b border-slate-100 hover:bg-slate-50 transition">
+                                    <td class="p-3 font-bold text-slate-800">{{ act.descripcion }}</td>
+                                    <td class="p-3 font-medium text-slate-600">🏢 {{ act.categoria }}</td>
+                                    <td class="p-3 font-bold text-blue-600">👤 {{ act.responsable }}</td>
+                                    <td class="p-3">
+                                        <span class="badge-estado" ng-class="{'badge-pendiente': act.estado==='Pendiente', 'badge-proceso': act.estado==='En Proceso', 'badge-completado': act.estado==='Completado'}">
+                                            {{ act.estado }}
+                                        </span>
+                                    </td>
+                                    <td class="p-3 font-mono text-slate-500 font-bold bg-slate-50 rounded">{{ act.fechaLimite || '--' }}</td>
+                                    <td class="p-3">
+                                        <a ng-if="act.docUrl" ng-href="{{ act.docUrl }}" download="{{ act.docNombre || 'Documento_Especificacion' }}" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 inline-flex items-center gap-1">
+                                            📄 Descargar
+                                        </a>
+                                        <span ng-if="!act.docUrl" class="text-slate-400 text-[10px]">Sin archivo</span>
+                                    </td>
+                                    <td class="p-3">
+                                        <audio ng-if="act.audioUrl" controls ng-src="{{ act.audioUrl }}" class="h-7 w-36 rounded-md"></audio>
+                                        <span ng-if="!act.audioUrl" class="text-slate-400 text-[10px]">Sin audio</span>
+                                    </td>
+                                    <td class="p-3 text-center space-x-1 whitespace-nowrap">
+                                        <button ng-click="abrirModalEdicion(act)" class="px-2.5 py-1 bg-indigo-50 text-indigo-600 font-bold rounded-lg border border-indigo-200 text-[10px] hover:bg-indigo-100">✏ Modificar</button>
+                                        <button ng-click="cambiarEstado(act)" class="px-2.5 py-1 bg-blue-50 text-blue-600 font-bold rounded-lg border border-blue-200 text-[10px] hover:bg-blue-100">⚡ Estado</button>
+                                        <button ng-show="puedesEliminar(act)" ng-click="eliminarActividad(act.id)" class="px-2.5 py-1 bg-red-50 text-red-600 font-bold rounded-lg border border-red-200 text-[10px] hover:bg-red-100">🗑 Borrar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL DE EDICIÓN (FECHA COMPROMISO BLOQUEADA) -->
+            <div ng-show="modalEdicionAbierto" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                <div class="card-light p-6 max-w-lg w-full space-y-4 border border-slate-200 shadow-2xl">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="text-base font-black text-slate-800 uppercase">✏ Modificar Requerimiento</h3>
+                        <button ng-click="modalEdicionAbierto = false" class="text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+                    </div>
+
+                    <form ng-submit="guardarEdicionTarea()" class="space-y-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Descripción</label>
+                            <input type="text" ng-model="actEdit.descripcion" required class="input-light w-full">
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Gerencia / Área</label>
+                            <select ng-model="actEdit.categoria" required class="input-light w-full">
+                                <option value="Servicios bancarios">Servicios bancarios</option>
+                                <option value="Recaudación especializada">Recaudación especializada</option>
+                                <option value="Control contable">Control contable</option>
+                                <option value="Fábrica">Fábrica</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Responsable</label>
+                            <input type="text" ng-model="actEdit.responsable" required placeholder="Responsable" class="input-light w-full">
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Estado</label>
+                            <select ng-model="actEdit.estado" required class="input-light w-full">
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="En Proceso">En Proceso</option>
+                                <option value="Completado">Completado</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Fecha Compromiso (SLA) 🔒 (No modificable)</label>
+                            <input type="text" ng-model="actEdit.fechaLimite" disabled class="input-light w-full bg-slate-200/80 font-mono text-slate-600 font-bold cursor-not-allowed">
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Observaciones</label>
+                            <textarea ng-model="actEdit.observaciones" rows="3" class="input-light w-full resize-none"></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                            <button type="button" ng-click="modalEdicionAbierto = false" class="py-2.5 px-4 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs uppercase">Cancelar</button>
+                            <button type="submit" class="py-2.5 px-5 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase shadow-md hover:bg-blue-700">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. SECCIÓN CALENDARIO -->
+            <div ng-show="seccionActiva === 'calendario'" class="space-y-6">
+                <div class="text-center max-w-lg mx-auto">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-800 uppercase">📅 Agenda Ejecutiva & SLAs</h2>
+                    <p class="text-xs text-slate-500 font-semibold">Visualización de vencimientos y registro de comunicados de voz</p>
+                </div>
+
+                <div class="card-light p-5 sm:p-6 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-black text-slate-800 uppercase">🗓 Próximos Vencimientos de Compromisos</h3>
+                        <span class="text-xs font-bold text-blue-600">Sincronizado en tiempo real</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <div ng-repeat="act in actividadesVisibles | filter:{estado: '!Completado'}" class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center text-[10px]">
+                                <span class="font-bold text-slate-500">📅 {{ act.fechaLimite || 'Sin Fecha' }}</span>
+                                <span class="badge-estado" ng-class="{'badge-pendiente': act.estado==='Pendiente', 'badge-proceso': act.estado==='En Proceso'}">{{ act.estado }}</span>
+                            </div>
+                            <h4 class="font-bold text-xs text-slate-800 leading-snug">{{ act.descripcion }}</h4>
+                            <div class="text-[10px] text-slate-500 flex justify-between border-t border-slate-200 pt-2">
+                                <span>👤 {{ act.responsable }}</span>
+                                <span class="text-blue-600 font-bold">🏢 {{ act.categoria }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. SECCIÓN SUGERENCIAS -->
+            <div ng-show="seccionActiva === 'sugerencias'" class="space-y-6">
+                <div class="text-center max-w-lg mx-auto">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-800 uppercase">💡 Buzón de Sugerencias</h2>
+                    <p class="text-xs text-slate-500 font-semibold">Propuestas enviadas a la administración</p>
+                </div>
+
+                <div class="max-w-xl mx-auto space-y-6">
+                    <div class="card-light p-5 space-y-4">
+                        <form ng-submit="enviarSugerencia()" class="space-y-3">
+                            <input type="text" ng-model="nuevaSugerencia.titulo" required placeholder="Título..." class="input-light w-full">
+                            <textarea ng-model="nuevaSugerencia.detalle" required placeholder="Detalla tu sugerencia..." class="input-light w-full resize-none" rows="4"></textarea>
+                            
+                            <div class="flex justify-end">
+                                <button type="submit" class="py-3 px-6 bg-blue-600 text-white font-bold text-xs uppercase rounded-xl shadow-md">Enviar Sugerencia</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="card-light p-4 space-y-2" ng-repeat="sug in listaSugerencias">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-xs text-blue-600">👤 {{ sug.autor }}</span>
+                                <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{{ sug.estado || 'En Revisión' }}</span>
+                            </div>
+                            <h4 class="font-black text-xs text-slate-800">{{ sug.titulo }}</h4>
+                            <p class="text-xs text-slate-600">{{ sug.detalle }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. SECCIÓN ADMIN -->
+            <div ng-show="seccionActiva === 'admin' && esSuperAdmin" class="space-y-6">
+                <div class="card-light p-5 sm:p-6 space-y-4">
+                    <h3 class="text-sm font-black text-slate-800 uppercase">+ Crear Usuario</h3>
+                    <form ng-submit="guardarNuevoUsuario()" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="text" ng-model="formUsu.nombre" required placeholder="Nombre Completo" class="input-light w-full">
+                            <input type="text" ng-model="formUsu.usuario" required placeholder="Usuario" class="input-light w-full">
+                            <input type="password" ng-model="formUsu.password" required placeholder="Contraseña" class="input-light w-full">
+                            
+                            <select ng-model="formUsu.rol" required class="input-light w-full">
+                                <option value="operador">Operador (3 Gerencias)</option>
+                                <option value="admin">Administrador General</option>
+                                <option value="operador_fabrica">Operador (Fábrica)</option>
+                                <option value="admin_fabrica">Administrador (Fábrica)</option>
+                            </select>
+
+                            <select ng-model="formUsu.gerencia" required class="input-light w-full">
+                                <option value="Servicios bancarios">Servicios bancarios</option>
+                                <option value="Recaudación especializada">Recaudación especializada</option>
+                                <option value="Control contable">Control contable</option>
+                                <option value="Fábrica">Fábrica</option>
+                            </select>
+
+                            <input type="text" ng-model="formUsu.cargo" required placeholder="Cargo" class="input-light w-full">
+                        </div>
+                        <button type="submit" class="py-3 px-6 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase shadow-md">
+                            + Crear Usuario
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </main>
     </div>
 
+    <!-- SCRIPT FIREBASE & LOGICA ANGULARJS OPTIMIZADA -->
     <script>
-        // CONFIGURACIÓN DE FIREBASE EN LA NUBE
         const firebaseConfig = {
   apiKey: "AIzaSyDkAiU9BnVR6IUG8JcpbepCmR18yCRRx_M",
   authDomain: "control-operativo-26ec9.firebaseapp.com",
@@ -328,527 +505,306 @@
   messagingSenderId: "791633280108",
   appId: "1:791633280108:web:c3aa0853d1271dee6b2c49"
 };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const usuariosAutorizados = {
-            "luis": { pass: "control2026", esAdmin: true, areaRestringida: null },
-            "admin": { pass: "1234", esAdmin: true, areaRestringida: null },
-            "jacroner": { pass: "operaciones", esAdmin: false, areaRestringida: null },
-            "simón": { pass: "banco2026", esAdmin: false, areaRestringida: null },
-            "kelvin": { pass: "control123", esAdmin: false, areaRestringida: null },
-            "juan": { pass: "fabrica2026", esAdmin: false, areaRestringida: "Fábrica" }
-        };
+        var app = angular.module('matrizApp', []);
 
+        app.controller('MatrizController', function($scope, $sce, $timeout) {
+            $scope.sesionIniciada = false;
+            $scope.cargandoLogin = false;
+            $scope.esSuperAdmin = false;
+            $scope.usuarioSesion = "";
+            $scope.rolUsuario = "";
+            $scope.seccionActiva = 'matriz';
+            $scope.modalEdicionAbierto = false;
 
-        let registros = [];
-        let idDocEditando = null;
+            $scope.actividadesVisibles = [];
+            $scope.listaSugerencias = [];
+            $scope.nuevaAct = { categoria: "Servicios bancarios", estado: "Pendiente" };
+            $scope.actEdit = {};
+            $scope.nuevaSugerencia = {};
+            $scope.formUsu = {};
 
-        window.onload = function() {
-            let usuarioSesion = sessionStorage.getItem("usuario_autenticado");
-            if (usuarioSesion) mostrarAplicacion(usuarioSesion);
-            window.addEventListener('online', actualizarEstadoRed);
-            window.addEventListener('offline', actualizarEstadoRed);
-        };
+            $scope.grabandoAudio = false;
+            let mediaRecorder, audioChunks = [];
 
-        function obtenerUsuarioSesion() { return sessionStorage.getItem("usuario_autenticado"); }
-        function esUsuarioAdmin() {
-            let user = obtenerUsuarioSesion();
-            return user && usuariosAutorizados[user] && usuariosAutorizados[user].esAdmin;
-        }
-        function obtenerAreaRestringida() {
-            let user = obtenerUsuarioSesion();
-            return (user && usuariosAutorizados[user]) ? usuariosAutorizados[user].areaRestringida : null;
-        }
+            $scope.iniciarSesion = function() {
+                try {
+                    var u = ($scope.loginUser || "").trim().toLowerCase();
+                    var p = ($scope.loginPass || "").trim();
 
-        function actualizarEstadoRed() {
-            let netTag = document.getElementById("netTag");
-            if (navigator.onLine) {
-                netTag.textContent = "🟢 Conectado Nube"; netTag.className = "net-tag net-online";
-            } else {
-                netTag.textContent = "🔴 Sin Conexión"; netTag.className = "net-tag net-offline";
-            }
-        }
+                    if (!u || !p) {
+                        alert("Por favor ingrese usuario y contraseña");
+                        return;
+                    }
 
-        function autenticar() {
-            let user = document.getElementById("userInput").value.trim().toLowerCase();
-            let pass = document.getElementById("passInput").value.trim();
-            let errorDiv = document.getElementById("loginError");
+                    $scope.cargandoLogin = true;
+                    $scope.loginError = false;
 
-            if (usuariosAutorizados[user] && usuariosAutorizados[user].pass === pass) {
-                sessionStorage.setItem("usuario_autenticado", user);
-                errorDiv.style.display = "none";
-                mostrarAplicacion(user);
-            } else {
-                errorDiv.style.display = "block";
-            }
-        }
+                    // ACCESO DIRECTO MAESTRO LUIS
+                    if (u === 'luis' && p === 'control2026') {
+                        $scope.$evalAsync(function() {
+                            $scope.sesionIniciada = true;
+                            $scope.esSuperAdmin = true;
+                            $scope.usuarioSesion = "Luis Coronado";
+                            $scope.rolUsuario = "admin_master";
+                            $scope.cargandoLogin = false;
+                            $scope.loginError = false;
+                            $scope.sincronizarFirebase();
+                        });
+                        return;
+                    }
 
-        function mostrarAplicacion(usuario) {
-            document.getElementById("loginOverlay").style.display = "none";
-            document.getElementById("appContainer").style.display = "block";
-            document.getElementById("userTag").textContent = `Usuario: ${usuario}`;
+                    // CONSULTA FIRESTORE
+                    db.collection("personal_intranet").where("usuario", "==", u).where("password", "==", p).get()
+                    .then(function(snapshot) {
+                        $scope.$evalAsync(function() {
+                            $scope.cargandoLogin = false;
+                            if (!snapshot.empty) {
+                                let userData = snapshot.docs[0].data();
+                                $scope.sesionIniciada = true;
+                                $scope.rolUsuario = userData.rol || 'operador';
+                                $scope.usuarioSesion = userData.nombre || u;
+                                $scope.esSuperAdmin = (userData.rol === 'admin');
+                                $scope.loginError = false;
+                                $scope.sincronizarFirebase();
+                            } else {
+                                $scope.loginError = true;
+                            }
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error("Error Firebase:", error);
+                        $scope.$evalAsync(function() {
+                            $scope.cargandoLogin = false;
+                            $scope.loginError = true;
+                            alert("Error al conectar con la base de datos. Verifique sus credenciales de Firebase.");
+                        });
+                    });
 
-            let roleTag = document.getElementById("roleTag");
-            let btnArchivar = document.getElementById("btnArchivarCompletadas");
-            let btnDashExcel = document.getElementById("btnDashExcel");
-            let selectCategoria = document.getElementById("categoria");
-            let selectFiltroArea = document.getElementById("filtroArea");
+                } catch (err) {
+                    console.error("Error crítico en inicio de sesión:", err);
+                    $scope.cargandoLogin = false;
+                    alert("Ocurrió un error al procesar la solicitud: " + err.message);
+                }
+            };
 
-            let areaRestringida = obtenerAreaRestringida();
+            $scope.cerrarSesion = function() {
+                $scope.sesionIniciada = false;
+                $scope.loginUser = "";
+                $scope.loginPass = "";
+                $scope.loginError = false;
+                $scope.limpiarFormularioNuevaActividad();
+            };
 
-            if (esUsuarioAdmin()) {
-                roleTag.textContent = "Perfil: Administrador"; roleTag.className = "role-tag role-admin";
-                btnArchivar.style.display = "inline-block"; 
-                btnDashExcel.style.display = "inline-block";
-                selectCategoria.disabled = false; selectFiltroArea.disabled = false;
-            } else if (areaRestringida) {
-                roleTag.textContent = `Perfil: ${areaRestringida}`; roleTag.className = "role-tag role-user";
-                btnArchivar.style.display = "none"; 
-                btnDashExcel.style.display = "none";
-                selectCategoria.value = areaRestringida; selectCategoria.disabled = true;
-                selectFiltroArea.value = areaRestringida; selectFiltroArea.disabled = true;
-            } else {
-                roleTag.textContent = "Perfil: Operador"; roleTag.className = "role-tag role-user";
-                btnArchivar.style.display = "none"; 
-                btnDashExcel.style.display = "none";
-                selectCategoria.disabled = false; selectFiltroArea.disabled = false;
-            }
+            $scope.limpiarFormularioNuevaActividad = function() {
+                $scope.nuevaAct = { categoria: "Servicios bancarios", estado: "Pendiente", descripcion: "", responsable: "", observaciones: "", fechaLimiteInput: null, docUrl: "", docNombre: "", audioUrl: null };
+                let fileInput = document.getElementById('docFileInput');
+                if (fileInput) fileInput.value = '';
+            };
 
-            actualizarEstadoRed();
-            escucharCambiosNube();
-        }
+            $scope.puedesVerArea = function(area) {
+                if ($scope.rolUsuario === 'admin_master') return true;
+                if ($scope.rolUsuario === 'operador_fabrica' || $scope.rolUsuario === 'admin_fabrica') {
+                    return area === 'Fábrica';
+                }
+                return area !== 'Fábrica';
+            };
 
-        function cerrarSesion() {
-            sessionStorage.removeItem("usuario_autenticado");
-            document.getElementById("userInput").value = "";
-            document.getElementById("passInput").value = "";
-            document.getElementById("appContainer").style.display = "none";
-            document.getElementById("loginOverlay").style.display = "flex";
-        }
+            $scope.puedesEliminar = function(act) {
+                if ($scope.rolUsuario === 'admin_master') return true;
+                if ($scope.rolUsuario === 'admin_fabrica' && act.categoria === 'Fábrica') return true;
+                if ($scope.rolUsuario === 'admin' && act.categoria !== 'Fábrica') return true;
+                return false;
+            };
 
-        function escucharCambiosNube() {
-            db.collection("actividades_operativas").onSnapshot((snapshot) => {
-                registros = [];
-                snapshot.forEach((doc) => {
-                    let item = doc.data();
-                    item.id = doc.id;
-                    item.diasRestantes = obtenerDiferenciaDias(item.fechaLimite);
-                    registros.push(item);
+            $scope.cargarArchivoDoc = function(element) {
+                let file = element.files[0];
+                if (file) {
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        $scope.$evalAsync(function() {
+                            $scope.nuevaAct.docUrl = e.target.result;
+                            $scope.nuevaAct.docNombre = file.name;
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            $scope.toggleGrabarAudio = function() {
+                if (!$scope.grabandoAudio) {
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+                        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                        mediaRecorder.onstop = () => {
+                            let blob = new Blob(audioChunks, { type: 'audio/mp3' });
+                            let reader = new FileReader();
+                            reader.onload = function(e) {
+                                $scope.$evalAsync(function() {
+                                    $scope.nuevaAct.audioUrl = $sce.trustAsResourceUrl(e.target.result);
+                                    $scope.nuevaAct.audioRaw = e.target.result;
+                                });
+                            };
+                            reader.readAsDataURL(blob);
+                        };
+                        mediaRecorder.start();
+                        $scope.$evalAsync(function() { $scope.grabandoAudio = true; });
+                    });
+                } else {
+                    mediaRecorder.stop();
+                    $scope.grabandoAudio = false;
+                }
+            };
+
+            $scope.sincronizarFirebase = function() {
+                db.collection("actividades_operativas").onSnapshot(snapshot => {
+                    $scope.$evalAsync(function() {
+                        $scope.actividadesVisibles = [];
+                        snapshot.forEach(doc => {
+                            let data = doc.data();
+                            data.id = doc.id;
+                            if (data.audioUrl) {
+                                data.audioUrl = $sce.trustAsResourceUrl(data.audioUrl);
+                            }
+                            if ($scope.puedesVerArea(data.categoria)) {
+                                $scope.actividadesVisibles.push(data);
+                            }
+                        });
+                    });
                 });
 
-                registros.sort((a, b) => {
-                    let pesoEstado = { "Pendiente": 1, "En Proceso": 2, "Completado": 3 };
-                    if (pesoEstado[a.estado] !== pesoEstado[b.estado]) return pesoEstado[a.estado] - pesoEstado[b.estado];
-                    return (a.fechaLimite || "9999-99-99").localeCompare(b.fechaLimite || "9999-99-99");
+                db.collection("sugerencias_sistema").orderBy("fechaSort", "desc").onSnapshot(snapshot => {
+                    $scope.$evalAsync(function() {
+                        $scope.listaSugerencias = [];
+                        snapshot.forEach(doc => {
+                            let s = doc.data();
+                            s.id = doc.id;
+                            $scope.listaSugerencias.push(s);
+                        });
+                    });
                 });
+            };
 
-                actualizarVista();
-            }, (error) => console.error(error));
-        }
+            $scope.contarPorEstado = function(est) {
+                return $scope.actividadesVisibles.filter(a => a.estado === est).length;
+            };
 
-        function obtenerDiferenciaDias(fechaLimiteStr) {
-            if (!fechaLimiteStr) return null;
-            let hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-            let partes = fechaLimiteStr.split("-");
-            let limite = new Date(partes[0], partes[1] - 1, partes[2]);
-            return Math.ceil((limite - hoy) / (1000 * 60 * 60 * 24));
-        }
+            $scope.agregarActividad = function() {
+                let registro = {
+                    descripcion: $scope.nuevaAct.descripcion,
+                    categoria: $scope.nuevaAct.categoria,
+                    responsable: $scope.nuevaAct.responsable,
+                    estado: $scope.nuevaAct.estado,
+                    observaciones: $scope.nuevaAct.observaciones || "",
+                    fechaLimite: $scope.nuevaAct.fechaLimiteInput ? $scope.nuevaAct.fechaLimiteInput.toISOString().split('T')[0] : "",
+                    docUrl: $scope.nuevaAct.docUrl || "",
+                    docNombre: $scope.nuevaAct.docNombre || "",
+                    audioUrl: $scope.nuevaAct.audioRaw || ""
+                };
 
-        function actualizarVista() {
-            let cuerpo = document.getElementById("tablaBody");
-            cuerpo.innerHTML = "";
-
-            let textoBusqueda = document.getElementById("buscarTexto").value.trim().toLowerCase();
-            let filtroResp = document.getElementById("filtroResponsable").value.trim().toLowerCase();
-            let filtroArea = document.getElementById("filtroArea").value;
-            let filtroEstado = document.getElementById("filtroEstado").value;
-            let areaRestringida = obtenerAreaRestringida();
-            if (areaRestringida) filtroArea = areaRestringida;
-
-            let pendientesCount = 0, completadosCount = 0, vencidosCount = 0, completadosATiempo = 0;
-            let esAdmin = esUsuarioAdmin();
-
-            registros.forEach((item) => {
-                if (areaRestringida && item.categoria !== areaRestringida) return;
-
-                let diasRestantes = item.diasRestantes;
-                let estaVencido = (diasRestantes !== null && diasRestantes < 0 && item.estado !== "Completado");
-                let estaProximo = (diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 5 && item.estado !== "Completado");
-
-                if (item.estado === "Completado") {
-                    completadosCount++;
-                    if (!item.fechaCierre || (item.fechaLimite && item.fechaCierre <= item.fechaLimite)) {
-                        completadosATiempo++;
-                    }
-                } else {
-                    pendientesCount++;
-                    if (estaVencido) vencidosCount++;
-                }
-
-                let coincideTexto = item.descripcion.toLowerCase().includes(textoBusqueda) || (item.observaciones && item.observaciones.toLowerCase().includes(textoBusqueda));
-                let coincideResp = item.responsable.toLowerCase().includes(filtroResp);
-                let coincideArea = (filtroArea === "TODAS" || item.categoria === filtroArea);
-                let coincideEstado = (filtroEstado === "TODOS" || item.estado === filtroEstado);
-
-                if (coincideTexto && coincideResp && coincideArea && coincideEstado) {
-                    let badgeClass = "badge-pendiente";
-                    if (item.estado === "En Proceso") badgeClass = "badge-proceso";
-                    if (item.estado === "Completado") badgeClass = "badge-completado";
-
-                    let claseFila = "";
-                    let mensajeAlerta = "";
-
-                    if (item.estado !== "Completado") {
-                        if (estaVencido) {
-                            claseFila = "alerta-vencido";
-                            mensajeAlerta = `<span class="alerta-texto rojo">⚠ Vencido (${Math.abs(diasRestantes)}d)</span>`;
-                        } else if (estaProximo) {
-                            claseFila = "alerta-proximo";
-                            mensajeAlerta = `<span class="alerta-texto amarillo">⏳ Vence (${diasRestantes}d)</span>`;
-                        }
-                    }
-
-                    let fechaMostrar = item.fechaLimite ? item.fechaLimite : "Sin fecha";
-                    let creadorMostrar = item.creadoPor ? item.creadoPor : "Sistema";
-                    let modificadoMostrar = item.modificadoPor ? item.modificadoPor : "--";
-                    let obsMostrar = item.observaciones ? item.observaciones : "-";
-
-                    let botonBorrarHTML = esAdmin 
-                        ? `<button class="btn-accion btn-eliminar" onclick="eliminarRegistro('${item.id}')">Borrar</button>`
-                        : `<span style="font-size:10px; color:var(--text-muted);">Protegido</span>`;
-
-                    cuerpo.innerHTML += `
-                        <tr class="${claseFila}">
-                            <td>${fechaMostrar} ${mensajeAlerta}</td>
-                            <td>${item.descripcion}</td>
-                            <td>${item.categoria}</td>
-                            <td><strong>${item.responsable}</strong></td>
-                            <td class="obs-cell">${obsMostrar}</td>
-                            <td><span class="creador-tag">👤 ${creadorMostrar}</span></td>
-                            <td><span class="creador-tag">✏ ${modificadoMostrar}</span></td>
-                            <td><span class="${badgeClass}">${item.estado}</span></td>
-                            <td>
-                                <button class="btn-accion btn-editar" onclick="cargarEdicion('${item.id}')">Editar</button>
-                                ${botonBorrarHTML}
-                            </td>
-                        </tr>
-                    `;
-                }
-            });
-
-            let total = areaRestringida ? (pendientesCount + completadosCount) : registros.length;
-            document.getElementById("kpiTotal").textContent = total;
-            document.getElementById("kpiPendientes").textContent = pendientesCount;
-            document.getElementById("kpiVencidos").textContent = vencidosCount;
-            document.getElementById("kpiCompletados").textContent = completadosCount;
-
-            let pctSLA = completadosCount > 0 ? Math.round((completadosATiempo / completadosCount) * 100) : 100;
-            document.getElementById("kpiSLA").textContent = `${pctSLA}%`;
-
-            let pctCumplimiento = total > 0 ? Math.round((completadosCount / total) * 100) : 0;
-            let pctPendientes = total > 0 ? Math.round((pendientesCount / total) * 100) : 0;
-            let pctVencidos = total > 0 ? Math.round((vencidosCount / total) * 100) : 0;
-
-            document.getElementById("barTextCumplimiento").textContent = `${pctCumplimiento}% (${completadosCount}/${total})`;
-            document.getElementById("barFillCumplimiento").style.width = `${pctCumplimiento}%`;
-            document.getElementById("barTextPendientes").textContent = `${pctPendientes}% (${pendientesCount}/${total})`;
-            document.getElementById("barFillPendientes").style.width = `${pctPendientes}%`;
-            document.getElementById("barTextVencidos").textContent = `${pctVencidos}% (${vencidosCount}/${total})`;
-            document.getElementById("barFillVencidos").style.width = `${pctVencidos}%`;
-        }
-
-        // GENERADOR DE DASHBOARD EJECUTIVO v9.5 - RANKING & AUTO-FIT (100% ONLINE)
-        function generarExcelGerencialNativo() {
-            if (!esUsuarioAdmin()) return alert("Acceso denegado: Solo administradores pueden generar este informe.");
-            if (registros.length === 0) return alert("No hay datos cargados.");
-
-            let hoyStr = new Date().toISOString().split('T')[0];
-            let wb = XLSX.utils.book_new();
-
-            // 1. PROCESAMIENTO DE DATOS Y CÁLCULO DE RANKINGS
-            let statsArea = {};
-            let statsResp = {};
-            let totalCompletadas = 0, totalATiempo = 0, totalVencidas = 0, desviacionTotal = 0;
-
-            registros.forEach(r => {
-                let area = r.categoria || 'General';
-                let resp = r.responsable || 'Sin Asignar';
-
-                if (!statsArea[area]) statsArea[area] = { total: 0, aTiempo: 0, desviadas: 0 };
-                if (!statsResp[resp]) statsResp[resp] = { total: 0, aTiempo: 0, desviadas: 0 };
-
-                statsArea[area].total++;
-                statsResp[resp].total++;
-
-                if (r.estado === "Completado") {
-                    totalCompletadas++;
-                    let cumplio = true;
-                    if (r.fechaLimite) {
-                        let lim = new Date(r.fechaLimite);
-                        let cie = r.fechaCierre ? new Date(r.fechaCierre) : new Date();
-                        let diff = Math.ceil((cie - lim) / (1000 * 60 * 60 * 24));
-                        if (diff > 0) { cumplio = false; desviacionTotal += diff; }
-                    }
-                    if (cumplio) { 
-                        totalATiempo++; 
-                        statsArea[area].aTiempo++; 
-                        statsResp[resp].aTiempo++; 
-                    } else { 
-                        statsArea[area].desviadas++; 
-                        statsResp[resp].desviadas++; 
-                    }
-                } else {
-                    if (r.diasRestantes !== null && r.diasRestantes < 0) totalVencidas++;
-                }
-            });
-
-            let slaGlobal = totalCompletadas > 0 ? Math.round((totalATiempo / totalCompletadas) * 100) : 100;
-
-            // 2. CONSTRUCCIÓN DE LA PESTAÑA 1: RESUMEN EJECUTIVO & RANKINGS
-            let rowsDash = [
-                ["INFORME DE GESTIÓN OPERATIVA & CUMPLIMIENTO SLA"],
-                ["Generado dinámicamente el: " + hoyStr],
-                [],
-                ["MÉTRICAS CLAVE DE GESTIÓN (KPIs)"],
-                ["CUMPLIMIENTO SLA GLOBAL", `${slaGlobal}%`, "TOTAL ACTIVIDADES", registros.length, "TAREAS VENCIDAS", totalVencidas, "DÍAS DESVIACIÓN ACUM.", `${desviacionTotal} días`],
-                [],
-                ["🏆 RANKING DE EFICIENCIA POR ÁREA OPERATIVA"],
-                ["Posición", "Área Operativa", "Total Requerimientos", "Cumplidos a Tiempo", "Desviados", "% Eficiencia SLA", "Estatus"]
-            ];
-
-            // Ordenar Áreas por Ranking de Eficiencia (% SLA descendente)
-            let rankingAreas = Object.keys(statsArea).map(area => {
-                let d = statsArea[area];
-                let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
-                return { area, total: d.total, aTiempo: d.aTiempo, desviadas: d.desviadas, eff };
-            }).sort((a, b) => b.eff - a.eff);
-
-            rankingAreas.forEach((item, index) => {
-                let estatus = item.eff >= 80 ? "ÓPTIMO 🟢" : "REQUIERE AJUSTE 🔴";
-                rowsDash.push([`#${index + 1}`, item.area, item.total, item.aTiempo, item.desviadas, `${item.eff}%`, estatus]);
-            });
-
-            rowsDash.push([]);
-            rowsDash.push(["👤 RANKING DE RENDIMIENTO INDIVIDUAL POR RESPONSABLE"]);
-            rowsDash.push(["Posición", "Responsable", "Tareas Asignadas", "Entregas a Tiempo", "Entregas Fuera de SLA", "% Efectividad", "Desempeño"]);
-
-            // Ordenar Responsables por Ranking de Eficiencia
-            let rankingResp = Object.keys(statsResp).map(resp => {
-                let d = statsResp[resp];
-                let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
-                return { resp, total: d.total, aTiempo: d.aTiempo, desviadas: d.desviadas, eff };
-            }).sort((a, b) => b.eff - a.eff);
-
-            rankingResp.forEach((item, index) => {
-                let calificacion = item.eff >= 85 ? "Alto Rendimiento 🌟" : (item.eff >= 70 ? "En Rango 🟡" : "Atención Requerida 🔴");
-                rowsDash.push([`#${index + 1}`, item.resp, item.total, item.aTiempo, item.desviadas, `${item.eff}%`, calificacion]);
-            });
-
-            let wsDash = XLSX.utils.aoa_to_sheet(rowsDash);
-
-            // 3. CONSTRUCCIÓN DE LA PESTAÑA 2: DETALLE ACTIVIDAD POR ACTIVIDAD
-            let rowsDetalle = [
-                ["Fecha Compromiso", "Fecha Cierre Real", "Descripción de la Actividad", "Área", "Responsable", "Observaciones / Avances", "Estado", "SLA Individual", "Días Desviación"]
-            ];
-
-            registros.forEach(r => {
-                let slaInd = "Pendiente";
-                let diasDesv = 0;
-                if (r.estado === "Completado") {
-                    if (r.fechaLimite) {
-                        let lim = new Date(r.fechaLimite);
-                        let cie = r.fechaCierre ? new Date(r.fechaCierre) : new Date();
-                        diasDesv = Math.ceil((cie - lim) / (1000 * 60 * 60 * 24));
-                        slaInd = diasDesv <= 0 ? "Cumplido 🟢" : "Desviado 🔴";
-                    } else { slaInd = "Cumplido 🟢"; }
-                } else {
-                    slaInd = (r.diasRestantes !== null && r.diasRestantes < 0) ? "Vencido 🔴" : "En Plazo ⏳";
-                }
-
-                rowsDetalle.push([
-                    r.fechaLimite || '--',
-                    r.fechaCierre || '--',
-                    r.descripcion || '',
-                    r.categoria || '',
-                    r.responsable || '',
-                    r.observaciones || '',
-                    r.estado || '',
-                    slaInd,
-                    diasDesv
-                ]);
-            });
-
-            let wsDetalle = XLSX.utils.aoa_to_sheet(rowsDetalle);
-
-            // 4. AUTO-AJUSTE DINÁMICO DE ANCHOS DE COLUMNA (AUTO-FIT)
-            [wsDash, wsDetalle].forEach(ws => {
-                let range = XLSX.utils.decode_range(ws['!ref']);
-                let colWidths = [];
-                for (let C = range.s.c; C <= range.e.c; ++C) {
-                    let maxLen = 10;
-                    for (let R = range.s.r; R <= range.e.r; ++R) {
-                        let cell = ws[XLSX.utils.encode_cell({ c: C, r: R })];
-                        if (cell && cell.v) {
-                            let len = cell.v.toString().length;
-                            if (len > maxLen) maxLen = len;
-                        }
-                    }
-                    colWidths.push({ wch: Math.min(maxLen + 4, 45) });
-                }
-                ws['!cols'] = colWidths;
-            });
-
-            // 5. COMPILACIÓN Y DESCARGA AUTOMÁTICA
-            XLSX.utils.book_append_sheet(wb, wsDash, "Resumen & Rankings SLA");
-            XLSX.utils.book_append_sheet(wb, wsDetalle, "Detalle Operativo");
-
-            XLSX.writeFile(wb, `Dashboard_Ejecutivo_SLA_${hoyStr}.xlsx`);
-        }
-
-        function agregarRegistro() {
-            let desc = document.getElementById("desc").value.trim();
-            let cat = document.getElementById("categoria").value;
-            let resp = document.getElementById("responsable").value.trim() || "Sin Asignar";
-            let fechaLimite = document.getElementById("fechaLimite").value;
-            let estado = document.getElementById("estado").value;
-            let observaciones = document.getElementById("observaciones").value.trim();
-            let usuarioActual = obtenerUsuarioSesion() || "Anónimo";
-
-            let areaRestringida = obtenerAreaRestringida();
-            if (areaRestringida) cat = areaRestringida;
-            if (desc === "") return alert("Coloca una descripción.");
-
-            let hoyStr = new Date().toISOString().split("T")[0];
-            let fechaCierreFinal = (estado === "Completado") ? hoyStr : null;
-
-            db.collection("actividades_operativas").add({
-                descripcion: desc, categoria: cat, responsable: resp,
-                fechaLimite: fechaLimite, estado: estado, observaciones: observaciones,
-                creadoPor: usuarioActual, modificadoPor: usuarioActual,
-                fechaCierre: fechaCierreFinal, creadoEn: new Date()
-            }).then(() => limpiarFormulario()).catch(e => alert(e.message));
-        }
-
-        function cargarEdicion(id) {
-            idDocEditando = id;
-            let item = registros.find(r => r.id === id);
-            if (!item) return;
-
-            document.getElementById("desc").value = item.descripcion;
-            document.getElementById("categoria").value = item.categoria;
-            document.getElementById("responsable").value = item.responsable;
-            document.getElementById("fechaLimite").value = item.fechaLimite || "";
-            document.getElementById("estado").value = item.estado;
-            document.getElementById("observaciones").value = item.observaciones || "";
-
-            let inputFecha = document.getElementById("fechaLimite");
-            inputFecha.disabled = !esUsuarioAdmin();
-
-            document.getElementById("btnGuardar").style.display = "none";
-            document.getElementById("btnActualizar").style.display = "block";
-        }
-
-        function guardarEdicion() {
-            if (!idDocEditando) return;
-            let usuarioActual = obtenerUsuarioSesion() || "Anónimo";
-            let itemOriginal = registros.find(r => r.id === idDocEditando);
-
-            let nuevoEstado = document.getElementById("estado").value;
-            let hoyStr = new Date().toISOString().split("T")[0];
-            let fechaCierreFinal = itemOriginal ? itemOriginal.fechaCierre : null;
-
-            if (nuevoEstado === "Completado" && itemOriginal.estado !== "Completado") {
-                fechaCierreFinal = hoyStr;
-            } else if (nuevoEstado !== "Completado") {
-                fechaCierreFinal = null;
-            }
-
-            let fechaLimiteFinal = esUsuarioAdmin() 
-                ? document.getElementById("fechaLimite").value 
-                : (itemOriginal ? itemOriginal.fechaLimite : document.getElementById("fechaLimite").value);
-
-            let catFinal = document.getElementById("categoria").value;
-            let areaRestringida = obtenerAreaRestringida();
-            if (areaRestringida) catFinal = areaRestringida;
-
-            db.collection("actividades_operativas").doc(idDocEditando).update({
-                descripcion: document.getElementById("desc").value.trim(),
-                categoria: catFinal,
-                responsable: document.getElementById("responsable").value.trim() || "Sin Asignar",
-                fechaLimite: fechaLimiteFinal,
-                estado: nuevoEstado,
-                observaciones: document.getElementById("observaciones").value.trim(),
-                modificadoPor: usuarioActual,
-                fechaCierre: fechaCierreFinal
-            }).then(() => {
-                document.getElementById("btnGuardar").style.display = "block";
-                document.getElementById("btnActualizar").style.display = "none";
-                document.getElementById("fechaLimite").disabled = false;
-                idDocEditando = null;
-                limpiarFormulario();
-            }).catch(e => alert(e.message));
-        }
-
-        function eliminarRegistro(id) {
-            if (!esUsuarioAdmin()) return alert("⛔ Acción Denegada: Solo administradores pueden eliminar.");
-            if (confirm("¿Deseas eliminar la actividad?")) db.collection("actividades_operativas").doc(id).delete();
-        }
-
-        function archivarCompletadas() {
-            if (!esUsuarioAdmin()) return alert("⛔ Acción Denegada: Solo administradores pueden archivar.");
-            let completadas = registros.filter(r => r.estado === "Completado");
-            if (completadas.length === 0) return alert("No hay actividades completadas.");
-
-            if (confirm(`¿Archivar ${completadas.length} actividades?`)) {
-                let batch = db.batch();
-                completadas.forEach(item => {
-                    batch.set(db.collection("actividades_historico").doc(item.id), { ...item, archivadoEn: new Date() });
-                    batch.delete(db.collection("actividades_operativas").doc(item.id));
+                db.collection("actividades_operativas").add(registro).then(() => {
+                    $scope.$evalAsync(function() { $scope.limpiarFormularioNuevaActividad(); });
                 });
-                batch.commit().then(() => alert("Archivado con éxito.")).catch(e => alert(e.message));
-            }
-        }
+            };
 
-        function limpiarFiltros() {
-            document.getElementById("buscarTexto").value = "";
-            document.getElementById("filtroResponsable").value = "";
-            if (!obtenerAreaRestringida()) document.getElementById("filtroArea").value = "TODAS";
-            document.getElementById("filtroEstado").value = "TODOS";
-            actualizarVista();
-        }
+            $scope.abrirModalEdicion = function(act) {
+                $scope.actEdit = angular.copy(act);
+                $scope.modalEdicionAbierto = true;
+            };
 
-        function limpiarFormulario() {
-            document.getElementById("desc").value = "";
-            document.getElementById("responsable").value = "";
-            document.getElementById("fechaLimite").value = "";
-            document.getElementById("observaciones").value = "";
-            document.getElementById("fechaLimite").disabled = false;
-            let area = obtenerAreaRestringida();
-            if (area) document.getElementById("categoria").value = area;
-        }
+            $scope.guardarEdicionTarea = function() {
+                if ($scope.actEdit.id) {
+                    db.collection("actividades_operativas").doc($scope.actEdit.id).update({
+                        descripcion: $scope.actEdit.descripcion,
+                        categoria: $scope.actEdit.categoria,
+                        responsable: $scope.actEdit.responsable,
+                        estado: $scope.actEdit.estado,
+                        observaciones: $scope.actEdit.observaciones || ""
+                    }).then(() => {
+                        $scope.$evalAsync(function() {
+                            $scope.modalEdicionAbierto = false;
+                        });
+                    });
+                }
+            };
 
-        function exportarExcelOrdenado() {
-            if (registros.length === 0) return alert("No hay datos para exportar.");
-            let areaRestringida = obtenerAreaRestringida();
-            let listaExportar = areaRestringida ? registros.filter(r => r.categoria === areaRestringida) : registros;
+            $scope.cambiarEstado = function(act) {
+                let nuevoEstado = act.estado === 'Pendiente' ? 'En Proceso' : (act.estado === 'En Proceso' ? 'Completado' : 'Pendiente');
+                db.collection("actividades_operativas").doc(act.id).update({ estado: nuevoEstado });
+            };
 
-            let csvContent = "\uFEFFsep=;\n";
-            csvContent += "Fecha Compromiso;Fecha Cierre Real;Descripción;Área;Responsable;Observaciones / Avances;Creado Por;Última Modificación;Estado\n";
+            $scope.eliminarActividad = function(id) {
+                if (confirm("¿Eliminar este requerimiento?")) {
+                    db.collection("actividades_operativas").doc(id).delete();
+                }
+            };
 
-            listaExportar.forEach(r => {
-                let descLimpia = (r.descripcion || '').replace(/"/g, '""').replace(/\n/g, ' ');
-                let obsLimpia = (r.observaciones || '').replace(/"/g, '""').replace(/\n/g, ' ');
-                csvContent += `"${r.fechaLimite || ''}";"${r.fechaCierre || ''}";"${descLimpia}";"${r.categoria}";"${r.responsable}";"${obsLimpia}";"${r.creadoPor || 'Sistema'}";"${r.modificadoPor || '--'}";"${r.estado}"\n`;
-            });
+            $scope.enviarSugerencia = function() {
+                if ($scope.nuevaSugerencia.titulo && $scope.nuevaSugerencia.detalle) {
+                    db.collection("sugerencias_sistema").add({
+                        autor: $scope.usuarioSesion,
+                        titulo: $scope.nuevaSugerencia.titulo,
+                        detalle: $scope.nuevaSugerencia.detalle,
+                        estado: "En Revisión",
+                        fechaSort: new Date().getTime()
+                    }).then(() => {
+                        $scope.$evalAsync(function() {
+                            $scope.nuevaSugerencia = {};
+                            alert("¡Sugerencia enviada!");
+                        });
+                    });
+                }
+            };
 
-            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            let link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `Matriz_Seguimiento_Operativo_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
-            link.click();
-        }
+            $scope.guardarNuevoUsuario = function() {
+                if ($scope.formUsu.nombre && $scope.formUsu.usuario && $scope.formUsu.password) {
+                    db.collection("personal_intranet").add({
+                        nombre: $scope.formUsu.nombre,
+                        usuario: $scope.formUsu.usuario.trim().toLowerCase(),
+                        password: $scope.formUsu.password.trim(),
+                        rol: $scope.formUsu.rol || "operador",
+                        gerencia: $scope.formUsu.gerencia || "Servicios bancarios",
+                        cargo: $scope.formUsu.cargo || "Analista"
+                    }).then(() => {
+                        alert("¡Usuario creado!");
+                        $scope.$evalAsync(function() { $scope.formUsu = {}; });
+                    });
+                }
+            };
+
+            $scope.exportarPDF = function() {
+                let element = document.getElementById('pdfReportContainer');
+                let opt = {
+                    margin: 0.5,
+                    filename: `Reporte_Matriz_${new Date().toISOString().split('T')[0]}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, backgroundColor: '#FFFFFF' },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+                };
+                html2pdf().set(opt).from(element).save();
+            };
+
+            $scope.exportarExcel = function() {
+                let wb = XLSX.utils.book_new();
+                let dataMatriz = [["Descripción", "Gerencia", "Responsable", "Estado", "Observaciones", "Fecha Compromiso"]];
+                $scope.actividadesVisibles.forEach(a => {
+                    dataMatriz.push([a.descripcion, a.categoria, a.responsable, a.estado, a.observaciones || '--', a.fechaLimite || '--']);
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataMatriz), "Matriz Operativa");
+                XLSX.writeFile(wb, `Matriz_Seguimiento_${new Date().toISOString().split('T')[0]}.xlsx`);
+            };
+
+            $scope.solicitarPermisoPush = function() {
+                if ('Notification' in window) {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') alert("¡Notificaciones activadas!");
+                    });
+                }
+            };
+        });
     </script>
 </body>
 </html>

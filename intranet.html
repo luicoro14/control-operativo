@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Hub Operativo v20.1 Light-Executive</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            background-color: #F8FAFC;
+            color: #1E293B;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+            overflow-x: hidden;
+        }
+
+        @media (min-width: 768px) {
+            body { padding-bottom: 2rem; }
+        }
+
+        .card-light {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .input-light {
+            background-color: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            border-radius: 12px;
+            padding: 0.65rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #0F172A;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-light:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            background-color: #FFFFFF;
+        }
+
+        .nav-btn {
+            color: #64748B;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.65rem 1rem;
+            border-radius: 12px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn.active {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .login-logo-animated {
+            animation: floatLogo 3s infinite ease-in-out;
+        }
+
+        @keyframes floatLogo {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(-2deg); }
+        }
+    </style>
+</head>
+<body ng-app="hubApp" ng-controller="HubController">
+
+    <!-- LOGIN CLARO -->
+    <div id="loginOverlay" ng-if="!sesionIniciada" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-sm">
+        <div class="card-light p-8 max-w-md w-full text-center shadow-2xl space-y-5 border border-slate-200">
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-4xl shadow-lg shadow-blue-500/30 login-logo-animated">
+                🏢
+            </div>
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Hub Operativo</h2>
+                <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mt-1">Light-Executive Edition v20.1</p>
+            </div>
+
+            <form ng-submit="iniciarSesion()" class="space-y-4 pt-2">
+                <input type="text" ng-model="loginUser" placeholder="Usuario registrado" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" class="input-light w-full text-center font-bold">
+                <input type="password" ng-model="loginPass" placeholder="Contraseña" required autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password" class="input-light w-full text-center font-bold">
+
+                <button type="submit" ng-disabled="cargandoLogin" class="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm uppercase shadow-lg shadow-blue-600/30 active:scale-95 transition">
+                    {{ cargandoLogin ? 'Verificando...' : 'Ingresar al Hub' }}
+                </button>
+            </form>
+
+            <p ng-show="loginError" class="text-xs text-red-600 font-bold">⚠ Credenciales incorrectas</p>
+        </div>
+    </div>
+
+    <!-- MAIN HUB CONTAINER -->
+    <div ng-if="sesionIniciada">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 py-3.5 shadow-sm">
+            <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-lg shadow-md">
+                        HUB
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-800 tracking-tight uppercase">HUB OPERATIVO</h1>
+                        <p class="text-[10px] sm:text-xs text-slate-500 font-semibold">Panel Ejecutivo v20.1</p>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center gap-3">
+                    <nav class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                        <button class="nav-btn" ng-class="{'active': moduloActivo === 'inicio'}" ng-click="cambiarModulo('inicio')">🏠 Inicio</button>
+                        <button class="nav-btn" ng-class="{'active': moduloActivo === 'consultas'}" ng-click="cambiarModulo('consultas')">🎙 Consultas Gerenciales</button>
+                        <button class="nav-btn" ng-class="{'active': moduloActivo === 'rankings'}" ng-click="cambiarModulo('rankings')">🏆 Top 5</button>
+                        <button class="nav-btn" ng-class="{'active': moduloActivo === 'directorio'}" ng-click="cambiarModulo('directorio')">👥 Directorio</button>
+                        <button class="nav-btn" ng-class="{'active': moduloActivo === 'mural'}" ng-click="cambiarModulo('mural')">💬 Mural Social</button>
+                        <button class="nav-btn" ng-show="esAdmin" ng-class="{'active': moduloActivo === 'admin'}" ng-click="cambiarModulo('admin')">⚙ Admin</button>
+                    </nav>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 hidden sm:inline-block">
+                        👤 {{ usuarioSesion }}
+                    </span>
+                    <a href="index.html" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">Ir a la Matriz</a>
+                    <button ng-click="cerrarSesion()" class="text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-xl border border-red-200">Salir</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+
+            <!-- 1. MODULO INICIO (EFICIENCIA EN ASIGNACIONES) -->
+            <section ng-show="moduloActivo === 'inicio'" class="space-y-6">
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-700 p-6 sm:p-8 text-white shadow-xl">
+                    <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <span class="text-[10px] sm:text-xs font-black uppercase bg-white/20 px-3 py-1 rounded-full">Consolidado General</span>
+                            <h2 class="text-2xl sm:text-3xl font-black mt-2">Eficiencia en Asignaciones</h2>
+                        </div>
+                        <button ng-click="exportarInformeConsolidado()" class="w-full md:w-auto px-5 py-3.5 rounded-2xl bg-white text-blue-700 font-black text-xs uppercase shadow-md hover:bg-blue-50 transition">
+                            📥 Reporte Consolidado (.xlsx)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Total Actividades</span>
+                        <div class="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{{ actividadesMatriz.length }}</div>
+                    </div>
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-emerald-600 uppercase">SLA Global</span>
+                        <div class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">{{ slaGlobal }}%</div>
+                    </div>
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-blue-600 uppercase">Líder Top 5</span>
+                        <div class="text-sm sm:text-base font-black text-blue-600 mt-1 truncate">{{ top5Trabajadores[0].nombre || 'Sin datos' }}</div>
+                    </div>
+                    <div class="card-light p-4 sm:p-5">
+                        <span class="text-[10px] sm:text-xs font-bold text-indigo-600 uppercase">Gerencia Líder</span>
+                        <div class="text-sm sm:text-base font-black text-indigo-600 mt-1 truncate">{{ gerenciasRanking[0].nombre || 'Sin datos' }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. MODULO CONSULTAS GERENCIALES POR VOZ -->
+            <section ng-show="moduloActivo === 'consultas'" class="space-y-6">
+                <div class="text-center max-w-lg mx-auto">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-800 uppercase">🎙 Consultas & Instrucciones Gerenciales</h2>
+                    <p class="text-xs text-slate-500 font-semibold">Graba o envía notas de voz con preguntas o directrices para el equipo</p>
+                </div>
+
+                <div class="card-light p-5 sm:p-6 space-y-4 max-w-2xl mx-auto">
+                    <form ng-submit="publicarConsultaGerencial()" class="space-y-4">
+                        <input type="text" ng-model="nuevaConsulta.titulo" placeholder="Título o tema de la consulta..." required class="input-light w-full font-bold">
+                        <textarea ng-model="nuevaConsulta.detalle" placeholder="Detalles en texto (opcional)..." class="input-light w-full resize-none" rows="3"></textarea>
+                        
+                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                            <label class="text-[11px] font-bold text-slate-700 uppercase block">Grabar Nota de Voz Gerencial:</label>
+                            <div class="flex items-center gap-3">
+                                <button type="button" ng-click="grabarAudioConsulta()" class="px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-sm transition" ng-class="{'bg-red-600 text-white animate-pulse': grabandoAudio, 'bg-blue-600 text-white': !grabandoAudio}">
+                                    {{ grabandoAudio ? '⏹ Detener Grabación' : '🎤 Grabar Audio' }}
+                                </button>
+                                <span ng-if="nuevaConsulta.audioUrl" class="text-xs font-bold text-emerald-600">✔ Audio listo para enviar</span>
+                            </div>
+                            <audio ng-if="nuevaConsulta.audioUrl" controls ng-src="{{ nuevaConsulta.audioUrl }}" class="w-full h-8 rounded-lg mt-2"></audio>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase rounded-2xl shadow-md">
+                            🚀 Enviar Consulta Gerencial
+                        </button>
+                    </form>
+                </div>
+
+                <!-- LISTADO DE CONSULTAS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card-light p-5 space-y-3" ng-repeat="item in consultas">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                            <span class="text-xs font-bold text-blue-600">👤 {{ item.autor }}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">{{ item.fecha | date:'short' }}</span>
+                        </div>
+                        <h4 class="font-black text-sm text-slate-800">{{ item.titulo }}</h4>
+                        <p class="text-xs text-slate-600" ng-if="item.detalle">{{ item.detalle }}</p>
+
+                        <div ng-if="item.audioUrl" class="pt-2">
+                            <audio controls ng-src="{{ item.audioUrl }}" class="w-full h-8 rounded-lg"></audio>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. MODULO RANKINGS -->
+            <section ng-show="moduloActivo === 'rankings'" class="space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card-light p-5 sm:p-6">
+                        <h3 class="text-sm font-black text-slate-800 uppercase mb-4">🏆 Top 5 Responsables más Eficientes</h3>
+                        <div class="space-y-3">
+                            <div ng-repeat="colab in top5Trabajadores" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-slate-400">#{{ $index + 1 }}</span>
+                                    <img ng-src="{{ colab.foto }}" class="w-10 h-10 rounded-full object-cover border border-slate-300">
+                                    <div>
+                                        <h4 class="font-bold text-xs sm:text-sm text-slate-800">{{ colab.nombre }}</h4>
+                                        <p class="text-[10px] text-slate-500 font-medium">{{ colab.cargo }}</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">{{ colab.eficiencia }}% SLA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-light p-5 sm:p-6">
+                        <h3 class="text-sm font-black text-slate-800 uppercase mb-4">🏢 Ranking por Gerencias</h3>
+                        <div class="space-y-4">
+                            <div ng-repeat="ger in gerenciasRanking" class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold">
+                                    <span class="text-slate-700">{{ ger.nombre }}</span>
+                                    <span class="text-blue-600">{{ ger.eficiencia }}% SLA</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                                    <div class="h-full bg-blue-600 rounded-full" style="width: {{ ger.eficiencia }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. MODULO DIRECTORIO -->
+            <section ng-show="moduloActivo === 'directorio'" class="space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-800 uppercase">Directorio de Personal</h2>
+                    <input type="text" ng-model="busquedaDirectorio" placeholder="🔍 Buscar por nombre..." class="input-light w-full sm:w-auto">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="card-light p-5 text-center" ng-repeat="trab in trabajadores | filter:busquedaDirectorio">
+                        <img ng-src="{{ trab.foto }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-2 border-blue-500/30">
+                        <h3 class="font-bold text-sm text-slate-800">{{ trab.nombre }}</h3>
+                        <p class="text-[10px] font-bold text-blue-600 uppercase">{{ trab.cargo }}</p>
+                        <p class="text-xs text-slate-500 mt-1">🏢 {{ trab.gerencia }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. MODULO MURAL SOCIAL -->
+            <section ng-show="moduloActivo === 'mural'" class="space-y-6">
+                <div class="text-center max-w-lg mx-auto">
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-800 uppercase">💬 Mural Interactivo Social</h2>
+                    <p class="text-xs text-slate-500 font-semibold">Comparte avances, archivos e imágenes corporativas</p>
+                </div>
+
+                <div class="max-w-2xl mx-auto space-y-6">
+                    <div class="card-light p-5 space-y-4">
+                        <form ng-submit="publicarEnMural()" class="space-y-3">
+                            <textarea ng-model="nuevoPost.texto" required placeholder="Escribe una actualización o anuncio..." class="input-light w-full resize-none" rows="3"></textarea>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">📷 Imagen / Video / Archivo</label>
+                                    <input type="file" id="muralFileInput" onchange="angular.element(this).scope().cargandoArchivoMural(this)" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">🔗 URL Enlace (Opcional)</label>
+                                    <input type="text" ng-model="nuevoPost.mediaUrl" placeholder="https://..." class="input-light w-full">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase rounded-xl shadow-md transition">
+                                🚀 Publicar en Mural
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- FEED DEL MURAL -->
+                    <div class="space-y-4">
+                        <div class="card-light p-5 space-y-3" ng-repeat="post in muroPosts">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-full bg-slate-100 text-blue-600 font-bold flex items-center justify-center text-xs border border-slate-200">👤</div>
+                                    <div>
+                                        <h4 class="font-black text-xs text-slate-800">{{ post.autor }}</h4>
+                                        <span class="text-[9px] text-slate-400 block">{{ post.fecha }}</span>
+                                    </div>
+                                </div>
+
+                                <button ng-show="puedesEliminarPost(post)" ng-click="eliminarPostMural(post.id)" class="text-[10px] font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">🗑 Borrar</button>
+                            </div>
+
+                            <p class="text-xs text-slate-700 font-medium whitespace-pre-line leading-relaxed">{{ post.texto }}</p>
+
+                            <div ng-if="post.mediaUrl" class="space-y-2">
+                                <div class="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 max-h-96 flex items-center justify-center">
+                                    <video ng-if="esVideo(post.mediaUrl)" controls class="w-full max-h-96 object-contain">
+                                        <source ng-src="{{ post.mediaUrl }}">
+                                    </video>
+                                    <img ng-if="!esVideo(post.mediaUrl)" ng-src="{{ post.mediaUrl }}" class="w-full max-h-96 object-cover">
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <a ng-href="{{ post.mediaUrl }}" download="Archivo_Publicacion" target="_blank" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-xl border border-blue-200 flex items-center gap-1">
+                                        📥 Descargar Archivo
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-4 pt-2 border-t border-slate-100">
+                                <button ng-click="darMeGusta(post)" class="text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 flex items-center gap-1.5">
+                                    ❤️ {{ post.likes || 0 }} Me Gusta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. MODULO ADMIN -->
+            <section ng-show="moduloActivo === 'admin' && esAdmin" class="space-y-6">
+                <div class="card-light p-5 sm:p-6 space-y-4">
+                    <h3 class="text-sm font-black text-slate-800 uppercase">👥 Usuarios Registrados</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase">
+                                    <th class="p-2.5 font-bold">Nombre</th>
+                                    <th class="p-2.5 font-bold">Usuario</th>
+                                    <th class="p-2.5 font-bold">Rol</th>
+                                    <th class="p-2.5 font-bold text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="u in trabajadores" class="border-b border-slate-100 hover:bg-slate-50">
+                                    <td class="p-2.5 font-bold text-slate-800">{{ u.nombre }}</td>
+                                    <td class="p-2.5 text-blue-600 font-mono">{{ u.usuario }}</td>
+                                    <td class="p-2.5 font-bold uppercase text-[10px] text-slate-500">{{ u.rol || 'operador' }}</td>
+                                    <td class="p-2.5 text-center">
+                                        <button ng-click="eliminarUsuarioHub(u.id)" class="px-2.5 py-1 bg-red-50 text-red-600 font-bold rounded-lg border border-red-200 text-[10px]">🗑 Eliminar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT FIREBASE & LOGICA ANGULARJS OPTIMIZADA -->
+    <script>
+        const firebaseConfig = {
+  apiKey: "AIzaSyDkAiU9BnVR6IUG8JcpbepCmR18yCRRx_M",
+  authDomain: "control-operativo-26ec9.firebaseapp.com",
+  projectId: "control-operativo-26ec9",
+  storageBucket: "control-operativo-26ec9.firebasestorage.app",
+  messagingSenderId: "791633280108",
+  appId: "1:791633280108:web:c3aa0853d1271dee6b2c49"
+};
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        var app = angular.module('hubApp', []);
+
+        app.controller('HubController', function($scope, $sce, $timeout) {
+            $scope.sesionIniciada = false;
+            $scope.cargandoLogin = false;
+            $scope.esAdmin = false;
+            $scope.usuarioSesion = "";
+            $scope.moduloActivo = 'inicio';
+
+            $scope.actividadesMatriz = [];
+            $scope.trabajadores = [];
+            $scope.muroPosts = [];
+            $scope.consultas = [];
+            $scope.nuevaConsulta = {};
+            $scope.nuevoPost = {};
+
+            $scope.grabandoAudio = false;
+            let mediaRecorder, chunks = [];
+
+            $scope.iniciarSesion = function() {
+                try {
+                    var u = ($scope.loginUser || "").trim().toLowerCase();
+                    var p = ($scope.loginPass || "").trim();
+
+                    if (!u || !p) {
+                        alert("Por favor ingrese usuario y contraseña");
+                        return;
+                    }
+
+                    $scope.cargandoLogin = true;
+                    $scope.loginError = false;
+
+                    // ACCESO MAESTRO LUIS
+                    if (u === 'luis' && p === 'control2026') {
+                        $scope.$evalAsync(function() {
+                            $scope.sesionIniciada = true;
+                            $scope.esAdmin = true;
+                            $scope.usuarioSesion = "Luis Coronado";
+                            $scope.cargandoLogin = false;
+                            $scope.loginError = false;
+                            $scope.sincronizarFirebase();
+                        });
+                        return;
+                    }
+
+                    // CONSULTA FIRESTORE
+                    db.collection("personal_intranet").where("usuario", "==", u).where("password", "==", p).get()
+                    .then(function(snapshot) {
+                        $scope.$evalAsync(function() {
+                            $scope.cargandoLogin = false;
+                            if (!snapshot.empty) {
+                                let userData = snapshot.docs[0].data();
+                                $scope.sesionIniciada = true;
+                                $scope.esAdmin = (userData.rol === 'admin');
+                                $scope.usuarioSesion = userData.nombre || u;
+                                $scope.loginError = false;
+                                $scope.sincronizarFirebase();
+                            } else {
+                                $scope.loginError = true;
+                            }
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error("Error Firebase:", error);
+                        $scope.$evalAsync(function() {
+                            $scope.cargandoLogin = false;
+                            $scope.loginError = true;
+                            alert("Error al conectar con la base de datos.");
+                        });
+                    });
+
+                } catch (err) {
+                    console.error("Error crítico en inicio de sesión:", err);
+                    $scope.cargandoLogin = false;
+                    alert("Ocurrió un error al procesar la solicitud: " + err.message);
+                }
+            };
+
+            $scope.cerrarSesion = function() {
+                $scope.sesionIniciada = false;
+            };
+
+            $scope.cambiarModulo = function(m) { $scope.moduloActivo = m; };
+
+            $scope.grabarAudioConsulta = function() {
+                if (!$scope.grabandoAudio) {
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        chunks = [];
+                        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                        mediaRecorder.onstop = () => {
+                            let blob = new Blob(chunks, { type: 'audio/mp3' });
+                            let reader = new FileReader();
+                            reader.onload = function(e) {
+                                $scope.$evalAsync(function() {
+                                    $scope.nuevaConsulta.audioUrl = $sce.trustAsResourceUrl(e.target.result);
+                                    $scope.nuevaConsulta.audioRaw = e.target.result;
+                                });
+                            };
+                            reader.readAsDataURL(blob);
+                        };
+                        mediaRecorder.start();
+                        $scope.$evalAsync(function() { $scope.grabandoAudio = true; });
+                    });
+                } else {
+                    mediaRecorder.stop();
+                    $scope.grabandoAudio = false;
+                }
+            };
+
+            $scope.publicarConsultaGerencial = function() {
+                if ($scope.nuevaConsulta.titulo) {
+                    db.collection("consultas_gerenciales").add({
+                        autor: $scope.usuarioSesion,
+                        titulo: $scope.nuevaConsulta.titulo,
+                        detalle: $scope.nuevaConsulta.detalle || "",
+                        audioUrl: $scope.nuevaConsulta.audioRaw || "",
+                        fecha: new Date().toISOString()
+                    }).then(() => {
+                        $scope.$evalAsync(function() { $scope.nuevaConsulta = {}; });
+                    });
+                }
+            };
+
+            $scope.sincronizarFirebase = function() {
+                db.collection("actividades_operativas").onSnapshot(snapshot => {
+                    $scope.$evalAsync(function() {
+                        $scope.actividadesMatriz = [];
+                        snapshot.forEach(doc => {
+                            let d = doc.data();
+                            d.id = doc.id;
+                            if (d.categoria !== 'Fábrica') $scope.actividadesMatriz.push(d);
+                        });
+                        $scope.calcularRankingsReales();
+                    });
+                });
+
+                db.collection("personal_intranet").onSnapshot(snapshot => {
+                    $scope.$evalAsync(function() {
+                        $scope.trabajadores = [];
+                        snapshot.forEach(doc => {
+                            let t = doc.data();
+                            t.id = doc.id;
+                            $scope.trabajadores.push(t);
+                        });
+                    });
+                });
+
+                db.collection("mural_posts").orderBy("fechaSort", "desc").onSnapshot(snapshot => {
+                    $scope.$evalAsync(function() {
+                        $scope.muroPosts = [];
+                        snapshot.forEach(doc => {
+                            let p = doc.data();
+                            p.id = doc.id;
+                            $scope.muroPosts.push(p);
+                        });
+                    });
+                });
+
+                db.collection("consultas_gerenciales").orderBy("fecha", "desc").onSnapshot(snapshot => {
+                    $scope.$evalAsync(function() {
+                        $scope.consultas = [];
+                        snapshot.forEach(doc => {
+                            let c = doc.data();
+                            c.id = doc.id;
+                            if (c.audioUrl) c.audioUrl = $sce.trustAsResourceUrl(c.audioUrl);
+                            $scope.consultas.push(c);
+                        });
+                    });
+                });
+            };
+
+            $scope.cargandoArchivoMural = function(element) {
+                let file = element.files[0];
+                if (file) {
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        $scope.$evalAsync(function() { $scope.nuevoPost.mediaUrl = e.target.result; });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            $scope.esVideo = function(url) {
+                if (!url) return false;
+                return url.includes("data:video") || url.endsWith(".mp4") || url.endsWith(".webm");
+            };
+
+            $scope.publicarEnMural = function() {
+                if ($scope.nuevoPost.texto) {
+                    db.collection("mural_posts").add({
+                        autor: $scope.usuarioSesion,
+                        texto: $scope.nuevoPost.texto,
+                        mediaUrl: $scope.nuevoPost.mediaUrl || "",
+                        likes: 0,
+                        fecha: new Date().toLocaleString(),
+                        fechaSort: new Date().getTime()
+                    }).then(() => {
+                        $scope.$evalAsync(function() { $scope.nuevoPost = {}; });
+                    });
+                }
+            };
+
+            $scope.darMeGusta = function(post) {
+                db.collection("mural_posts").doc(post.id).update({ likes: (post.likes || 0) + 1 });
+            };
+
+            $scope.puedesEliminarPost = function(post) {
+                return $scope.usuarioSesion === 'Luis Coronado' || $scope.esAdmin || post.autor === $scope.usuarioSesion;
+            };
+
+            $scope.eliminarPostMural = function(id) {
+                if (confirm("¿Eliminar publicación?")) db.collection("mural_posts").doc(id).delete();
+            };
+
+            $scope.calcularRankingsReales = function() {
+                let statsResp = {};
+                let statsGerencia = { "Servicios bancarios": { total: 0, aTiempo: 0 }, "Recaudación especializada": { total: 0, aTiempo: 0 }, "Control contable": { total: 0, aTiempo: 0 } };
+                let totalG = $scope.actividadesMatriz.length, completadasG = 0;
+
+                $scope.actividadesMatriz.forEach(act => {
+                    let r = act.responsable || "Sin Asignar";
+                    let g = act.categoria || "Servicios bancarios";
+                    if (!statsResp[r]) statsResp[r] = { total: 0, aTiempo: 0 };
+                    statsResp[r].total++;
+                    if (statsGerencia[g]) statsGerencia[g].total++;
+
+                    if (act.estado === "Completado") {
+                        completadasG++;
+                        statsResp[r].aTiempo++;
+                        if (statsGerencia[g]) statsGerencia[g].aTiempo++;
+                    }
+                });
+
+                $scope.slaGlobal = totalG > 0 ? Math.round((completadasG / totalG) * 100) : 100;
+
+                $scope.top5Trabajadores = Object.keys(statsResp).map(nombre => {
+                    let d = statsResp[nombre];
+                    let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
+                    let trabObj = $scope.trabajadores.find(t => t.nombre === nombre);
+                    return {
+                        nombre: nombre,
+                        cargo: trabObj ? trabObj.cargo : "Responsable",
+                        eficiencia: eff,
+                        foto: trabObj ? trabObj.foto : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80"
+                    };
+                }).sort((a, b) => b.eficiencia - a.eficiencia).slice(0, 5);
+
+                $scope.gerenciasRanking = Object.keys(statsGerencia).map(g => {
+                    let d = statsGerencia[g];
+                    let eff = d.total > 0 ? Math.round((d.aTiempo / d.total) * 100) : 0;
+                    return { nombre: g, eficiencia: eff };
+                }).sort((a, b) => b.eficiencia - a.eficiencia);
+            };
+
+            $scope.eliminarUsuarioHub = function(id) {
+                if (confirm("¿Eliminar usuario?")) db.collection("personal_intranet").doc(id).delete();
+            };
+
+            $scope.exportarInformeConsolidado = function() {
+                let wb = XLSX.utils.book_new();
+                let dataMatriz = [["Descripción", "Área", "Responsable", "Estado", "SLA"]];
+                $scope.actividadesMatriz.forEach(a => {
+                    dataMatriz.push([a.descripcion, a.categoria, a.responsable, a.estado, a.fechaLimite || '--']);
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataMatriz), "Consolidado");
+                XLSX.writeFile(wb, `Reporte_Hub_${new Date().toISOString().split('T')[0]}.xlsx`);
+            };
+        });
+    </script>
+</body>
+</html>
